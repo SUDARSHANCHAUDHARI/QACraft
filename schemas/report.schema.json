@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/report.schema.json",
+  "title": "QA Workflow Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "skill",
+    "run_id",
+    "context",
+    "results",
+    "decision",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "skill": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "context": {
+      "$ref": "run-context.schema.json"
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "$ref": "approval.schema.json"
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "finding.schema.json"
+      }
+    },
+    "decision": {
+      "$ref": "decision.schema.json"
+    },
+    "cleanup": {
+      "anyOf": [
+        {
+          "$ref": "cleanup.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "generator": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

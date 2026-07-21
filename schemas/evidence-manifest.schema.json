@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/evidence-manifest.schema.json",
+  "title": "QA Evidence Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "generated_at",
+    "items"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "path",
+          "sha256",
+          "mime_type",
+          "captured_at",
+          "privacy_class",
+          "redaction_state"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "minLength": 8
+          },
+          "scenario_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attempt_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*\\.\\.).+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "mime_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_tool": {
+            "type": "string"
+          },
+          "privacy_class": {
+            "enum": [
+              "PUBLIC",
+              "INTERNAL",
+              "RESTRICTED",
+              "CUSTOMER_RESTRICTED",
+              "SECURITY_RESTRICTED"
+            ]
+          },
+          "redaction_state": {
+            "enum": [
+              "NOT_REQUIRED",
+              "PENDING",
+              "VERIFIED",
+              "FAILED"
+            ]
+          },
+          "retention_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

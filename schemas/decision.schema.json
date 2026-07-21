@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/decision.schema.json",
+  "title": "QA Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decision_id",
+    "run_id",
+    "calculated",
+    "calculated_at",
+    "policy_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "decision_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "calculated": {
+      "type": "string",
+      "minLength": 1
+    },
+    "calculated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "manual_override": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "approver",
+        "reason",
+        "accepted_risk",
+        "recorded_at"
+      ],
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "approver": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "accepted_risk": {
+          "type": "string"
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

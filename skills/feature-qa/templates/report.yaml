@@ -1,0 +1,45 @@
+schema_version: "1.0.0"
+skill: "feature-qa"
+command: "/feature-qa"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'PASS'
+  - 'FAIL'
+  - 'INCONCLUSIVE'
+  - 'BLOCKED'
+  - 'NOT TESTED'
+  - 'FLAKY'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'run-context.json'
+  - 'approval-ledger.jsonl'
+  - 'impact-analysis.md'
+  - 'test-plan.md'
+  - 'data-plan.md'
+  - 'execution-ledger.jsonl'
+  - 'evidence-manifest.json'
+  - 'findings/'
+  - 'regression/'
+  - 'report.yaml'
+  - 'report.html'
+  - 'summary.md'
+  - 'cleanup-report.md'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

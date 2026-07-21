@@ -1,0 +1,41 @@
+schema_version: "1.0.0"
+skill: "qa-retrospective"
+command: "/qa-retrospective"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'EFFECTIVE'
+  - 'PARTIALLY EFFECTIVE'
+  - 'INEFFECTIVE'
+  - 'MISSING'
+  - 'FALSE CONFIDENCE'
+  - 'NOT ENOUGH EVIDENCE'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'retro-context.json'
+  - 'timeline.jsonl'
+  - 'outcome-analysis.md'
+  - 'contributing-systems.yaml'
+  - 'control-review.csv'
+  - 'actions.yaml'
+  - 'decision-log.jsonl'
+  - 'follow-up-plan.md'
+  - 'retrospective.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

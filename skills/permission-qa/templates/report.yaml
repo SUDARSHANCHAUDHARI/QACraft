@@ -1,0 +1,41 @@
+schema_version: "1.0.0"
+skill: "permission-qa"
+command: "/permission-qa"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'PASS'
+  - 'OVER-PERMISSION'
+  - 'UNDER-PERMISSION'
+  - 'INFORMATION LEAK'
+  - 'INCONSISTENT'
+  - 'REQUIREMENT GAP'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'permission-context.json'
+  - 'identity-map.json'
+  - 'permission-matrix.csv'
+  - 'action-plan.md'
+  - 'attempt-ledger.jsonl'
+  - 'evidence-manifest.json'
+  - 'findings/'
+  - 'cleanup-report.md'
+  - 'permission-report.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

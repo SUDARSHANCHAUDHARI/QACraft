@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/skill-catalog.schema.json",
+  "title": "QA Skill Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "skills"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "command",
+          "title",
+          "summary",
+          "use_when",
+          "not_for",
+          "phases",
+          "verdicts",
+          "evidence",
+          "controls",
+          "decisions",
+          "boundaries",
+          "outputs",
+          "example_request",
+          "example_output"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "command": {
+            "type": "string",
+            "pattern": "^/[a-z0-9-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "use_when": {
+            "type": "string",
+            "minLength": 1
+          },
+          "not_for": {
+            "type": "string",
+            "minLength": 1
+          },
+          "phases": {
+            "type": "array",
+            "minItems": 8,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "desc",
+                "detail",
+                "gate"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "gate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "verdicts": {
+            "type": "array",
+            "minItems": 4,
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "desc",
+                "tone"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "tone": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "inc",
+                    "block",
+                    "skip",
+                    "flaky",
+                    "invalid"
+                  ]
+                }
+              }
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 5,
+            "items": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "controls": {
+            "type": "array",
+            "minItems": 5,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "decisions": {
+            "type": "array",
+            "minItems": 4,
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "desc",
+                "tone"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "tone": {
+                  "enum": [
+                    "invalid",
+                    "reject",
+                    "blocked",
+                    "conditional",
+                    "approved"
+                  ]
+                }
+              }
+            }
+          },
+          "boundaries": {
+            "type": "array",
+            "minItems": 5,
+            "items": {
+              "type": "string"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "minItems": 6,
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "example_request": {
+            "type": "string",
+            "minLength": 1
+          },
+          "example_output": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

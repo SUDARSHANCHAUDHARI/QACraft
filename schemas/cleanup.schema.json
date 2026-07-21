@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/cleanup.schema.json",
+  "title": "QA Cleanup Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "status",
+    "completed_at",
+    "resources"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "status": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "NOT_REQUIRED",
+        "PRESERVED_FOR_INVESTIGATION",
+        "BLOCKED",
+        "FAILED"
+      ]
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_type",
+          "resource_id",
+          "ownership_status",
+          "cleanup_status"
+        ],
+        "properties": {
+          "resource_type": {
+            "type": "string"
+          },
+          "resource_id": {
+            "type": "string"
+          },
+          "ownership_status": {
+            "enum": [
+              "VERIFIED",
+              "UNCERTAIN",
+              "SHARED"
+            ]
+          },
+          "cleanup_status": {
+            "enum": [
+              "DELETED",
+              "RETAINED",
+              "FAILED",
+              "NOT_REQUIRED"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "residual_risk": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 5000
+    }
+  }
+}

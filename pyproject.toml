@@ -1,0 +1,11 @@
+[project]
+name = "qa-everyday-skill-pack"
+version = "1.0.0"
+description = "Detailed, evidence-based workflow specifications for everyday QA work"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.qa-skill-pack]
+catalog = "catalog/skills.json"
+docs = "docs/index.html"
+validator = "scripts/validate_repo.py"

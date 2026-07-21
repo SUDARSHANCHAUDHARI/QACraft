@@ -1,0 +1,40 @@
+schema_version: "1.0.0"
+skill: "bug-report"
+command: "/bug-report"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'CONFIRMED DEFECT'
+  - 'PROBABLE DEFECT'
+  - 'NOT A PRODUCT DEFECT'
+  - 'INSUFFICIENT EVIDENCE'
+  - 'DUPLICATE CANDIDATE'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'bug-context.json'
+  - 'original-observation.md'
+  - 'reproduction-plan.md'
+  - 'attempt-ledger.jsonl'
+  - 'evidence-manifest.json'
+  - 'duplicate-review.md'
+  - 'bug-report.md'
+  - 'publication-record.json'
+  - 'bug-report.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

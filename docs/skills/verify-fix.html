@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Determines whether a reported defect is fully fixed in the intended build and whether related behaviour remains safe across the agreed regression scope.">
+  <meta name="color-scheme" content="light">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+  <title>/verify-fix — Defect fix verification</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧪</text></svg>">
+  <style>
+:root {
+  --paper:#f2f5f9; --card:#fff; --ink:#14181f; --soft:#3e4958; --mute:#58677a;
+  --hair:#d3dae5; --hair-soft:#e4e9f0; --accent:#2340ce; --accent-ink:#172a88;
+  --accent-tint:#e7ebfb; --pass:#0b6135; --pass-bg:#ddf3e7; --fail:#941b16;
+  --fail-bg:#fce5e3; --inc:#714500; --inc-bg:#fff0cc; --block:#783200;
+  --block-bg:#f8e3d3; --skip:#414b59; --skip-bg:#edf0f4; --flaky:#53348e;
+  --flaky-bg:#eee8fa; --invalid:#8a1648; --invalid-bg:#f8e2ed;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,"Cascadia Code","Roboto Mono",monospace;
+  --maxw:1160px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit}p,ul,ol,dl,dd{margin:0}h1,h2,h3{margin:0;line-height:1.12;letter-spacing:-.02em;text-wrap:balance}
+h1{font-size:clamp(2.35rem,6vw,4.25rem);font-weight:800}h2{font-size:clamp(1.55rem,3.4vw,2.35rem);font-weight:760}
+h3{font-size:1.08rem;font-weight:720;letter-spacing:-.01em}code,pre,.mono{font-family:var(--mono)}
+.wrap{width:min(100% - 40px,var(--maxw));margin-inline:auto}.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.skip-link{position:fixed;top:12px;left:12px;z-index:100;transform:translateY(-180%);background:#fff;color:var(--ink);border:2px solid var(--accent);border-radius:8px;padding:9px 12px;font-weight:700}
+.skip-link:focus{transform:translateY(0)}.topnav{background:#090d14;color:#d7deeb;border-bottom:1px solid rgba(255,255,255,.12)}
+.topnav .wrap{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-block:12px}.topnav a{text-decoration:none;font-size:.86rem}
+.topnav a:focus-visible,.topnav a:hover{text-decoration:underline}.topnav .links{display:flex;gap:16px;flex-wrap:wrap}
+.hero{color:#edf1f7;background:radial-gradient(120% 100% at 88% 0%,#1c2a4b 0%,#101622 58%,#0b0f17 100%);padding:72px 0 68px}
+.prompt{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px;padding:11px 16px;border:1px solid rgba(255,255,255,.17);border-radius:10px;background:rgba(255,255,255,.06);color:#ccd4e4;font-family:var(--mono);font-size:clamp(.92rem,2.2vw,1.16rem)}
+.prompt .sigil{color:#7ca8ff}.prompt .cmd{color:#fff;font-weight:700}.prompt .arg{color:#9fd7bd}
+.hero h1{max-width:18ch;color:#fff}.hero .lede{max-width:67ch;margin-top:22px;color:#bdc7d8;font-size:clamp(1.05rem,2.1vw,1.28rem)}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 4px;margin-top:32px;color:#aab4c6;font-family:var(--mono);font-size:.82rem}
+.flow li{display:inline-flex;align-items:center;gap:6px;list-style:none}.flow li:not(:last-child)::after{content:"→";color:#7ca8ff;margin-left:4px}.flow b{color:#edf1f7;font-weight:650}
+section{padding:60px 0;border-top:1px solid var(--hair-soft)}.sec-head{display:flex;flex-direction:column;gap:12px;max-width:72ch;margin-bottom:32px}
+.sec-head p{color:var(--soft);font-size:1.03rem}.eyebrow{display:inline-block;color:var(--accent-ink);font-family:var(--mono);font-size:.76rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;overflow:hidden;border:1px solid var(--hair);border-radius:14px;background:var(--hair)}
+.stat{background:var(--card);padding:23px 21px}.stat dt{color:var(--accent-ink);font-family:var(--mono);font-size:2.35rem;font-weight:800;letter-spacing:-.03em;line-height:1}.stat dd{margin-top:9px;color:var(--mute);font-size:.87rem}
+.notice{margin-top:22px;border-left:4px solid var(--accent);border-radius:10px;background:var(--accent-tint);padding:16px 18px;color:var(--accent-ink);font-size:.94rem}
+.scope-grid,.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card{border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:22px}
+.card h3{margin-bottom:8px}.card p,.card li{color:var(--soft);font-size:.94rem}.card ul{padding-left:20px}.tag{display:block;margin-bottom:12px;color:var(--accent-ink);font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.pipe{display:flex;flex-direction:column}.phase{display:grid;grid-template-columns:64px minmax(0,1fr);gap:22px;padding:21px 0;border-top:1px dashed var(--hair)}
+.phase:first-child{border-top:none}.num{width:48px;height:48px;display:flex;align-items:center;justify-content:center;border:1px solid var(--accent-tint);border-radius:10px;background:var(--accent-tint);color:var(--accent);font-family:var(--mono);font-weight:750}
+.phase h3{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.phase p{max-width:80ch;margin-top:6px;color:var(--soft);font-size:.97rem}.detail{margin-top:7px;color:var(--mute);font-family:var(--mono);font-size:.83rem}
+.gate{display:inline-flex;align-items:center;min-height:26px;border:1px solid var(--accent);border-radius:999px;background:#fff;color:var(--accent-ink);padding:3px 9px;font-family:var(--mono);font-size:.71rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.verdicts,.decision-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}.vc,.decision{border:1px solid var(--hair);border-radius:12px;background:var(--card);padding:16px}
+.chip{display:inline-flex;margin-bottom:10px;border-radius:999px;padding:5px 10px;font-family:var(--mono);font-size:.8rem;font-weight:750}.vc p,.decision p{color:var(--soft);font-size:.87rem}
+.pass{background:var(--pass-bg);color:var(--pass)}.fail,.reject{background:var(--fail-bg);color:var(--fail)}.inc,.conditional{background:var(--inc-bg);color:var(--inc)}
+.block,.blocked{background:var(--block-bg);color:var(--block)}.skip{background:var(--skip-bg);color:var(--skip)}.flaky{background:var(--flaky-bg);color:var(--flaky)}.invalid{background:var(--invalid-bg);color:var(--invalid)}
+.decision strong{display:block;margin-bottom:8px;font-family:var(--mono);font-size:.85rem}.decision.invalid strong{color:var(--invalid)}.decision.reject strong{color:var(--fail)}.decision.blocked strong{color:var(--block)}.decision.conditional strong{color:var(--inc)}.decision.approved strong{color:var(--pass)}
+.table-wrap{overflow-x:auto;border:1px solid var(--hair);border-radius:14px;background:var(--card)}table{width:100%;border-collapse:collapse;min-width:760px}
+caption{padding:14px 16px;text-align:left;color:var(--ink);font-weight:700}th,td{padding:14px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--hair-soft);font-size:.9rem}
+th{color:var(--accent-ink);background:#f8f9fc;font-family:var(--mono);font-size:.75rem;letter-spacing:.05em;text-transform:uppercase}tr:last-child td{border-bottom:none}
+.boundary-list,.check-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;padding:0;list-style:none}.boundary-list li,.check-list li{border:1px solid var(--hair);border-radius:12px;background:var(--card);padding:18px;color:var(--soft);font-size:.92rem}.boundary-list b,.check-list b{color:var(--ink)}
+.output-flow{display:flex;flex-wrap:wrap;gap:12px}.output-box{flex:1 1 210px;border:1px solid var(--hair);border-radius:12px;background:var(--card);padding:15px 17px}.output-box code{color:var(--accent-ink);font-size:.78rem;font-weight:700}.output-box p{margin-top:5px;color:var(--soft);font-size:.85rem}
+.example{border-radius:14px;background:#0f131b;color:#c9d2e4;padding:20px 22px;overflow:auto;white-space:pre-wrap;font: .84rem/1.7 var(--mono)}
+.takeaway{display:flex;flex-direction:column;gap:9px;border-radius:16px;background:var(--ink);color:#edf1f7;padding:30px 32px}.takeaway .eyebrow{color:#8fb0ff}.takeaway p{max-width:74ch;color:#dce2ec;font-size:1.13rem}
+footer{border-top:1px solid var(--hair-soft);padding:40px 0 56px;color:var(--mute);font-size:.84rem}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.phase{grid-template-columns:48px minmax(0,1fr);gap:16px}.num{width:42px;height:42px}.topnav .wrap{align-items:flex-start;flex-direction:column}}
+@media(max-width:480px){.wrap{width:min(100% - 28px,var(--maxw))}.stats{grid-template-columns:1fr}section{padding:46px 0}.hero{padding:58px 0 54px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  :root{--paper:#fff}body{background:#fff}.skip-link,.topnav{display:none}.hero{background:#fff;color:#111;padding:26px 0}.hero h1,.prompt .cmd,.flow b{color:#111}.hero .lede,.flow,.prompt{color:#333}.prompt{border-color:#bbb;background:#fff}.prompt .sigil,.prompt .arg{color:#333}
+  section{padding:25px 0;break-inside:auto}.phase,.card,.vc,.decision,.output-box,.stat,tr{break-inside:avoid}.example{color:#111;background:#f3f3f3;white-space:pre-wrap}.chip{border:1px solid currentColor}footer{padding:22px 0}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<nav class="topnav" aria-label="Repository navigation"><div class="wrap"><a href="../index.html">← QA Skill Pack</a><div class="links"><a href="../../skills/verify-fix/SKILL.md">Skill specification</a><a href="#outputs-title">Outputs</a><a href="#implementation-title">Production checklist</a></div></div></nav>
+<header class="hero"><div class="wrap">
+  <div class="prompt" aria-label="Skill command"><span class="sigil" aria-hidden="true">$</span><span class="cmd">/verify-fix</span><span class="arg">QA-1234</span></div>
+  <h1>Defect fix verification</h1>
+  <p class="lede">Determines whether a reported defect is fully fixed in the intended build and whether related behaviour remains safe across the agreed regression scope.</p>
+  <ol class="flow" aria-label="Workflow at a glance"><li><b>Defect</b></li><li><b>Original-path reconstruction</b></li><li><b>Baseline confirmation</b></li><li><b>Candidate environment validation</b></li><li><b>Fix execution</b></li><li><b>Related regression checks</b></li><li><b>Fix assessment</b></li><li><b>Publish</b></li></ol>
+</div></header>
+<main id="main-content">
+<section aria-labelledby="scope-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Scope and intent</span><h2 id="scope-title">A controlled workflow specification</h2><p>This page defines the behaviour, controls, evidence, and outputs required from the skill. It does not claim that a language model can enforce security or correctness by wording alone.</p></div>
+  <div class="scope-grid">
+    <article class="card"><span class="tag">Use when</span><h3>Appropriate use</h3><p>Use when engineering marks a defect ready for QA, a candidate build contains a fix, or a previously intermittent issue needs confirmation.</p></article>
+    <article class="card"><span class="tag">Do not use when</span><h3>Non-goals</h3><p>Do not use when the original expected behaviour is unresolved, the fixed build cannot be identified, or the environment cannot reproduce the relevant conditions.</p></article>
+  </div>
+  <dl class="stats" aria-label="Workflow facts">
+    <div class="stat"><dt>8</dt><dd>versioned workflow phases</dd></div>
+    <div class="stat"><dt>3</dt><dd>explicit approval gates</dd></div>
+    <div class="stat"><dt>6</dt><dd>defined result states</dd></div>
+    <div class="stat"><dt>9</dt><dd>versioned output artifacts</dd></div>
+  </dl>
+  <div class="notice">Material changes to the source, environment, identity, approved actions, or expected behaviour invalidate dependent approvals and require revalidation.</div>
+</div></section>
+
+<section aria-labelledby="workflow-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Workflow</span><h2 id="workflow-title">The 8 phases</h2><p>Each phase has explicit inputs and outputs. Approval gates are hard stops bound to exact versions and hashes.</p></div>
+  <div class="pipe">
+        <article class="phase" aria-labelledby="phase-1-title">
+          <div class="num" aria-hidden="true">1</div>
+          <div>
+            <h3 id="phase-1-title"><span class="sr-only">Phase 1: </span>Defect and fix preflight <span class="gate">Gate 1 · approve fix target</span></h3>
+            <p>Resolve the original defect revision, approved expectation, original evidence, affected versions, proposed fix PR, candidate deployment, and known workaround.</p>
+            <div class="detail">defect revision · fix commits · candidate artifact · affected baseline</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-2-title">
+          <div class="num" aria-hidden="true">2</div>
+          <div>
+            <h3 id="phase-2-title"><span class="sr-only">Phase 2: </span>Original-path reconstruction</h3>
+            <p>Rebuild the shortest faithful reproduction using original role, data, platform, timing, configuration, and network conditions.</p>
+            <div class="detail">original preconditions · exact action · original failure signature</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-3-title">
+          <div class="num" aria-hidden="true">3</div>
+          <div>
+            <h3 id="phase-3-title"><span class="sr-only">Phase 3: </span>Baseline confirmation</h3>
+            <p>When safe and available, confirm the test detects the problem on an affected build. If unavailable, record the reason and use approved original evidence.</p>
+            <div class="detail">red proof · historical evidence · unavailable rationale</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-4-title">
+          <div class="num" aria-hidden="true">4</div>
+          <div>
+            <h3 id="phase-4-title"><span class="sr-only">Phase 4: </span>Candidate environment validation</h3>
+            <p>Verify the deployed artifact includes the intended fix and no unrelated environment change invalidates the comparison.</p>
+            <div class="detail">deployment manifest · config diff · feature flags · data state</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-5-title">
+          <div class="num" aria-hidden="true">5</div>
+          <div>
+            <h3 id="phase-5-title"><span class="sr-only">Phase 5: </span>Fix execution</h3>
+            <p>Execute the original scenario on the candidate build, record all attempts, and compare against the exact expected result and original failure signature.</p>
+            <div class="detail">attempt ledger · direct evidence · no retry-until-green</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-6-title">
+          <div class="num" aria-hidden="true">6</div>
+          <div>
+            <h3 id="phase-6-title"><span class="sr-only">Phase 6: </span>Related regression checks</h3>
+            <p>Test nearby states, negative paths, roles, platforms, recovery, and data persistence based on the fix blast radius.</p>
+            <div class="detail">direct regression · indirect regression · excluded coverage</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-7-title">
+          <div class="num" aria-hidden="true">7</div>
+          <div>
+            <h3 id="phase-7-title"><span class="sr-only">Phase 7: </span>Fix assessment <span class="gate">Gate 2 · confirm result</span></h3>
+            <p>Classify the result as fully fixed, partially fixed, not fixed, blocked, inconclusive, or regressed elsewhere. Separate symptom removal from root-cause confidence.</p>
+            <div class="detail">original symptom · remaining impact · new regressions · confidence</div>
+          </div>
+        </article>
+        <article class="phase" aria-labelledby="phase-8-title">
+          <div class="num" aria-hidden="true">8</div>
+          <div>
+            <h3 id="phase-8-title"><span class="sr-only">Phase 8: </span>Publish and regression recommendation <span class="gate">Gate 3 · publish verification</span></h3>
+            <p>Update the defect, attach evidence, recommend the proper automated test layer, and record any remaining risk or follow-up ticket.</p>
+            <div class="detail">verification comment · test recommendation · follow-up issue</div>
+          </div>
+        </article></div>
+</div></section>
+
+<section aria-labelledby="approval-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Approval contract</span><h2 id="approval-title">Every gate approves an exact decision object</h2><p>An approval cannot be reused after its environment, source, action plan, or approved document changes.</p></div>
+  <div class="table-wrap"><table><caption>Approval gates and binding requirements</caption><thead><tr><th scope="col">Gate</th><th scope="col">Decision</th><th scope="col">Required binding</th></tr></thead><tbody><tr><td>1</td><td>Gate 1 · approve fix target</td><td>Approval stores approver, role, timestamp, context hash, approved document hash, expiry, and invalidation state.</td></tr><tr><td>2</td><td>Gate 2 · confirm result</td><td>Approval stores approver, role, timestamp, context hash, approved document hash, expiry, and invalidation state.</td></tr><tr><td>3</td><td>Gate 3 · publish verification</td><td>Approval stores approver, role, timestamp, context hash, approved document hash, expiry, and invalidation state.</td></tr></tbody></table></div>
+</div></section>
+
+<section aria-labelledby="verdict-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Result model</span><h2 id="verdict-title">Defined states prevent vague conclusions</h2><p>Attempt outcomes remain separate from these workflow results. Errors, cancellations, and invalid context are never silently converted into a pass.</p></div>
+  <div class="verdicts"><div class="vc"><span class="chip pass">FIXED</span><p>The original failure no longer occurs and required related regression checks pass.</p></div><div class="vc"><span class="chip inc">PARTIALLY FIXED</span><p>The main symptom improved but some approved behaviour or affected scope remains incorrect.</p></div><div class="vc"><span class="chip fail">NOT FIXED</span><p>The original controlled failure still occurs in the candidate build.</p></div><div class="vc"><span class="chip flaky">REGRESSION FOUND</span><p>The fix resolves the original issue but introduces another release-relevant failure.</p></div><div class="vc"><span class="chip block">BLOCKED</span><p>The fix cannot be verified because the candidate, prerequisite, data, or environment is unavailable.</p></div><div class="vc"><span class="chip skip">INCONCLUSIVE</span><p>Evidence cannot distinguish a real fix from timing, environment, or intermittent behaviour.</p></div></div>
+</div></section>
+
+<section aria-labelledby="evidence-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Evidence contract</span><h2 id="evidence-title">Evidence must directly support the claim</h2><p>Evidence has provenance, capture context, privacy classification, retention, and integrity metadata. A convenient artifact is not automatically sufficient proof.</p></div>
+  <div class="table-wrap"><table><caption>Required evidence by claim type</caption><thead><tr><th scope="col">Claim</th><th scope="col">Primary evidence</th><th scope="col">Required validation</th></tr></thead><tbody><tr><td>Original defect</td><td>Issue revision and original evidence</td><td>The verification targets the same approved expectation.</td></tr><tr><td>Baseline</td><td>Affected-build result or approved historical evidence</td><td>Why red proof is available or unavailable is recorded.</td></tr><tr><td>Candidate identity</td><td>Deployment manifest</td><td>The intended fix commits are present.</td></tr><tr><td>Original path</td><td>Assertion-specific evidence</td><td>The previous failure signature is explicitly checked.</td></tr><tr><td>Regression scope</td><td>Impact-based scenario results</td><td>Included and excluded related coverage is visible.</td></tr><tr><td>Intermittency</td><td>Attempt sequence and timing</td><td>A pass after an assertion failure is not treated as FIXED.</td></tr></tbody></table></div>
+</div></section>
+
+<section aria-labelledby="controls-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Trust and safety</span><h2 id="controls-title">Controls that must be enforced outside the prompt</h2><p>These controls belong in the runtime, connector permissions, sandbox, renderer, storage layer, and review process.</p></div>
+  <div class="grid2"><div class="card"><span class="tag">Runtime control</span><h3>Version integrity</h3><p>Verification stops when the deployed candidate does not contain the approved fix.</p></div><div class="card"><span class="tag">Runtime control</span><h3>Expectation integrity</h3><p>The expected result cannot be changed merely to match the implementation.</p></div><div class="card"><span class="tag">Runtime control</span><h3>Attempt transparency</h3><p>All attempts remain visible, including environment and automation errors.</p></div><div class="card"><span class="tag">Runtime control</span><h3>Partial-fix honesty</h3><p>A reduced frequency or changed symptom does not automatically become FIXED.</p></div><div class="card"><span class="tag">Runtime control</span><h3>Regression independence</h3><p>A new failure is tracked separately while remaining part of the release decision.</p></div><div class="card"><span class="tag">Runtime control</span><h3>Publication binding</h3><p>The verification comment records build, context hash, evidence, and approver.</p></div></div>
+</div></section>
+
+<section aria-labelledby="decision-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Decision policy</span><h2 id="decision-title">Ordered outcomes, not averaged pass counts</h2><p>The first applicable high-severity outcome takes precedence. A manual override is recorded separately and never rewrites the calculated result.</p></div>
+  <div class="decision-grid"><div class="decision blocked"><strong>BLOCKED</strong><p>The fix target or required verification conditions cannot be established.</p></div><div class="decision reject"><strong>NOT FIXED</strong><p>The original defect remains or the expected behaviour is still unmet.</p></div><div class="decision conditional"><strong>PARTIALLY FIXED</strong><p>Material residual behaviour or scope remains.</p></div><div class="decision conditional"><strong>FIXED WITH FOLLOW-UP</strong><p>The original issue is fixed, but optional risk or separate non-blocking work remains.</p></div><div class="decision approved"><strong>FIXED</strong><p>The original defect and required regression scope pass in the verified candidate.</p></div></div>
+</div></section>
+
+<section aria-labelledby="boundaries-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Known limitations</span><h2 id="boundaries-title">Uncertainty and coverage limits remain visible</h2><p>The workflow documents what it cannot prove and what further evidence would change confidence.</p></div>
+  <ul class="boundary-list"><li><b>Limit 1.</b> Some historical builds cannot be recreated safely.</li><li><b>Limit 2.</b> A symptom can disappear because of configuration changes rather than the code fix.</li><li><b>Limit 3.</b> Intermittent defects need enough controlled attempts to support confidence.</li><li><b>Limit 4.</b> A root cause may remain uncertain even when the observable defect is fixed.</li><li><b>Limit 5.</b> Platform-specific fixes require platform-specific verification.</li><li><b>Limit 6.</b> A fix verification is not a full release regression unless explicitly scoped that way.</li></ul>
+</div></section>
+
+<section aria-labelledby="outputs-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Outputs</span><h2 id="outputs-title">Versioned records for review and continuation</h2><p>Human summaries are generated from validated structured records. They are not maintained as separate, drifting sources of truth.</p></div>
+  <div class="output-flow"><div class="output-box"><code>verification-context.json</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>baseline-result.md</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>candidate-attestation.json</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>verification-plan.md</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>attempt-ledger.jsonl</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>evidence-manifest.json</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>regression-results.yaml</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>verification-comment.md</code><p>Versioned output produced by the workflow.</p></div><div class="output-box"><code>verification-report.html</code><p>Versioned output produced by the workflow.</p></div></div>
+  <pre class="example" aria-label="Output directory structure">artifacts/qa/verify-fix/&lt;run-id&gt;/
+├── verification-context.json
+├── baseline-result.md
+├── candidate-attestation.json
+├── verification-plan.md
+├── attempt-ledger.jsonl
+├── evidence-manifest.json
+├── regression-results.yaml
+├── verification-comment.md
+└── verification-report.html</pre>
+</div></section>
+
+<section aria-labelledby="example-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Example</span><h2 id="example-title">Example request and controlled output</h2></div>
+  <div class="grid2">
+    <article class="card"><span class="tag">Request</span><h3>Input</h3><pre class="example">Verify fix QA-5520 in player 4.11.5. Reproduce the original offline reboot issue and check reconnect, cached playback, and a second reboot.</pre></article>
+    <article class="card"><span class="tag">Result</span><h3>Output excerpt</h3><pre class="example">Verification: PARTIALLY FIXED
+
+Original issue:
+The reboot loop no longer occurs.
+
+Remaining problem:
+After reconnection, the player displays the latest playlist but reports the previous playlist version for approximately three minutes.
+
+Regression checks:
+- Cached playback: PASS
+- First reboot: PASS
+- Reconnect metadata: FAIL
+- Second reboot: PASS
+
+Next action:
+Keep QA-5520 open or split the remaining metadata issue after Product confirms impact.</pre></article>
+  </div>
+</div></section>
+
+<section aria-labelledby="implementation-title"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Production readiness</span><h2 id="implementation-title">Required before operational use</h2><p>The written skill is only one layer. The repository, runtime, connectors, evidence storage, and publication path must implement these requirements.</p></div>
+  <ul class="check-list"><li><b>Required.</b> Tool, filesystem, repository, command, secret, and network permissions are enforced outside the model.</li><li><b>Required.</b> Every source, environment, build, plan, and approval has a version or content hash.</li><li><b>Required.</b> Untrusted values are escaped, length-bounded, path-safe, and separated from executable instructions.</li><li><b>Required.</b> Attempt outcomes, scenario verdicts, workflow decisions, and publication status remain separate.</li><li><b>Required.</b> Raw evidence, publishable evidence, access control, retention, redaction, and deletion are defined.</li><li><b>Required.</b> Concurrent runs use unique IDs, locks, idempotency keys, and conflict-aware updates.</li><li><b>Required.</b> Material changes invalidate dependent approvals and outcomes.</li><li><b>Required.</b> The repository validator passes before the skill is considered production-ready.</li></ul>
+</div></section>
+
+<section aria-labelledby="takeaway-title"><div class="wrap"><div class="takeaway"><span class="eyebrow">In one line</span><h2 id="takeaway-title">/verify-fix</h2><p>Determines whether a reported defect is fully fixed in the intended build and whether related behaviour remains safe across the agreed regression scope.</p></div></div></section>
+</main>
+<footer><div class="wrap"><p>Part of the QA Everyday Skill Pack. This is a shareable workflow specification; machine paths, credentials, customer data, and production secrets are intentionally excluded.</p></div></footer>
+</body>
+</html>

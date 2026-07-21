@@ -1,0 +1,42 @@
+schema_version: "1.0.0"
+skill: "playback-qa"
+command: "/playback-qa"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'PASS'
+  - 'PLAYBACK FAIL'
+  - 'QUALITY DEGRADED'
+  - 'PLATFORM-SPECIFIC'
+  - 'UNSUPPORTED CONTENT'
+  - 'INCONCLUSIVE'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'playback-context.json'
+  - 'media-corpus.yaml'
+  - 'platform-display-map.json'
+  - 'scenario-plan.md'
+  - 'attempt-ledger.jsonl'
+  - 'decoder-metrics/'
+  - 'evidence-manifest.json'
+  - 'playback-matrix.csv'
+  - 'cleanup-report.md'
+  - 'playback-report.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

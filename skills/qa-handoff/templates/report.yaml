@@ -1,0 +1,40 @@
+schema_version: "1.0.0"
+skill: "qa-handoff"
+command: "/qa-handoff"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'READY'
+  - 'READY WITH RISKS'
+  - 'BLOCKED'
+  - 'STALE'
+  - 'CANCELLED'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'handoff-context.json'
+  - 'state-snapshot.json'
+  - 'completed-work.md'
+  - 'remaining-work.md'
+  - 'known-traps.md'
+  - 'next-action.md'
+  - 'access-check.md'
+  - 'acceptance.json'
+  - 'handoff.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

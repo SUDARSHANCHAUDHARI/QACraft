@@ -1,0 +1,42 @@
+schema_version: "1.0.0"
+skill: "api-qa"
+command: "/api-qa"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'PASS'
+  - 'CONTRACT FAIL'
+  - 'BEHAVIOUR FAIL'
+  - 'SECURITY FAIL'
+  - 'RESILIENCE FAIL'
+  - 'BLOCKED'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'api-context.json'
+  - 'contract-map.yaml'
+  - 'case-catalog.yaml'
+  - 'traffic-plan.md'
+  - 'attempt-ledger.jsonl'
+  - 'redacted-http/'
+  - 'state-evidence/'
+  - 'findings/'
+  - 'cleanup-report.md'
+  - 'api-report.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"

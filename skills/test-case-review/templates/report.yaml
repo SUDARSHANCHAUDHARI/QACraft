@@ -1,0 +1,41 @@
+schema_version: "1.0.0"
+skill: "test-case-review"
+command: "/test-case-review"
+run_id: "<generated-run-id>"
+status: "<workflow-status>"
+context:
+  source_id: "<ticket-or-request-id>"
+  source_revision: "<revision-or-hash>"
+  environment: "<environment>"
+  deployment_identity: "<artifact-digest-or-manifest>"
+  context_hash: "<sha256>"
+approvals: []
+attempts: []
+results: []
+allowed_result_states:
+  - 'KEEP'
+  - 'REWRITE'
+  - 'MERGE'
+  - 'AUTOMATE OR MOVE LAYER'
+  - 'ARCHIVE'
+  - 'DELETE'
+findings: []
+evidence:
+  manifest: "evidence-manifest.json"
+decision:
+  calculated: "<ordered-decision>"
+  manual_override: null
+outputs:
+  - 'review-context.json'
+  - 'case-inventory.csv'
+  - 'traceability-map.yaml'
+  - 'duplicate-clusters.json'
+  - 'case-recommendations.csv'
+  - 'coverage-after-change.md'
+  - 'change-set.md'
+  - 'review-log.jsonl'
+  - 'test-case-review.html'
+cleanup:
+  status: "<complete|partial|not-required|blocked>"
+  residual_resources: []
+generated_at: "<RFC3339 timestamp>"
