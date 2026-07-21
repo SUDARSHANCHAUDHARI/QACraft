@@ -9,14 +9,34 @@ permissions:
 
 jobs:
   validate:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: python3 scripts/generate_docs.py
-      - run: python3 scripts/validate_repo.py
-      - run: python3 -m unittest discover -s tests -v
+          python-version: ${{ matrix.python-version }}
+
+      - name: Generate documentation
+        run: python3 scripts/generate_docs.py
+
+      - name: Validate repository
+        run: python3 scripts/validate_repo.py
+
+      - name: Run tests
+        run: python3 -m unittest discover -s tests -v
+
       - name: Check generated files are committed
         run: git diff --exit-code

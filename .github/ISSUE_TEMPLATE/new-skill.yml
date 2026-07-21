@@ -1,0 +1,31 @@
+name: New skill proposal
+description: Propose a new everyday QA skill
+title: "[Skill]: "
+labels:
+  - enhancement
+body:
+  - type: input
+    attributes:
+      label: Proposed command
+      placeholder: /example-skill
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: QA problem
+      description: What everyday QA problem should this skill solve?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected workflow
+      description: Describe the important phases, gates, evidence, and output.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Known risks
+      description: What could produce false confidence or unsafe actions?

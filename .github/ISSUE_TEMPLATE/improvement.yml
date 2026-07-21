@@ -1,0 +1,23 @@
+name: Improvement
+description: Suggest an improvement to an existing skill or shared policy
+title: "[Improvement]: "
+labels:
+  - enhancement
+body:
+  - type: input
+    attributes:
+      label: Affected skill or file
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Current limitation
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Suggested improvement
+    validations:
+      required: true
