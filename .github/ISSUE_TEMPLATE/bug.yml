@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a problem in a skill, schema, validator, or generated document
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    attributes:
+      label: Problem
+      description: What is incorrect or not working?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+      description: Provide the exact command, skill, or document involved.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Environment
+      description: Agent, operating system, Python version, and QACraft version.

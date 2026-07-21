@@ -212,8 +212,24 @@ def main():
             print(f"- {e}", file=sys.stderr)
         return 1
 
-    total_files = sum(1 for p in ROOT.rglob("*") if p.is_file())
-    print(f"Validation passed: {len(skills)} skills, {len(html_files)} HTML files, {total_files} repository files.")
+    excluded_dirs = {
+        ".git", "__pycache__", ".pytest_cache",
+        ".venv", "venv", "dist", "build"
+    }
+    total_files = sum(
+        1
+        for p in ROOT.rglob("*")
+        if p.is_file()
+        and not any(
+            part in excluded_dirs
+            for part in p.relative_to(ROOT).parts
+        )
+    )
+    print(
+        f"Validation passed: {len(skills)} skills, "
+        f"{len(html_files)} HTML files, "
+        f"{total_files} repository files."
+    )
     return 0
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# QA Everyday Skill Pack
+# QACraft
 
 A repository of 25 detailed, evidence-based QA workflow specifications for everyday QA work.
 
@@ -132,7 +132,7 @@ Never grant production, customer, or security-sensitive access merely because a 
 ## Repository structure
 
 ```text
-qa-everyday-skill-pack/
+qacraft/
 ├── catalog/
 ├── docs/
 ├── schemas/

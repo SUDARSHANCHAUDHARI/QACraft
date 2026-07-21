@@ -7,5 +7,5 @@ ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
 host = "127.0.0.1"
 port = 8000
-print(f"Serving QA Everyday Skill Pack at http://{host}:{port}/docs/index.html")
+print(f"Serving QACraft at http://{host}:{port}/docs/index.html")
 ThreadingHTTPServer((host, port), SimpleHTTPRequestHandler).serve_forever()
