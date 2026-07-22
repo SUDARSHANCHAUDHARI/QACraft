@@ -66,15 +66,36 @@ def build_update_plan(
         target = destination / relative
         if path in current:
             if current[path].get("sha256") != item["sha256"]:
-                operations.append({"operation": "replace", "path": path, "source": item["source"].as_posix(), "sha256": item["sha256"]})
+                operations.append(
+                    {
+                        "operation": "replace",
+                        "path": path,
+                        "source": item["source"].as_posix(),
+                        "expected_sha256": current[path].get("sha256"),
+                        "sha256": item["sha256"],
+                    }
+                )
         else:
             if target.exists() or target.is_symlink():
                 conflicts.append(path)
             else:
-                operations.append({"operation": "create", "path": path, "source": item["source"].as_posix(), "sha256": item["sha256"]})
+                operations.append(
+                    {
+                        "operation": "create",
+                        "path": path,
+                        "source": item["source"].as_posix(),
+                        "sha256": item["sha256"],
+                    }
+                )
 
     for path in sorted(set(current) - set(desired)):
-        operations.append({"operation": "delete", "path": path, "sha256": current[path].get("sha256")})
+        operations.append(
+            {
+                "operation": "delete",
+                "path": path,
+                "expected_sha256": current[path].get("sha256"),
+            }
+        )
 
     new_manifest = {
         "schema_version": 1,
@@ -115,6 +136,9 @@ def apply_update_plan(plan: dict) -> dict:
 
     destination = resolve_destination(Path(plan["destination"]))
     manifest_path = destination / MANIFEST_NAME
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise InstallError("Manifest changed after preview.")
+
     current_manifest_bytes = manifest_path.read_bytes()
     backups: dict[Path, bytes] = {}
     created: list[Path] = []
@@ -129,7 +153,7 @@ def apply_update_plan(plan: dict) -> dict:
             if operation in {"replace", "delete"}:
                 if not target.is_file() or target.is_symlink():
                     raise InstallError(f"Managed file changed after preview: {target}")
-                if sha256_file(target) != item.get("sha256") and operation == "delete":
+                if sha256_file(target) != item.get("expected_sha256"):
                     raise InstallError(f"Managed file changed after preview: {target}")
                 backups[target] = target.read_bytes()
 
@@ -138,9 +162,13 @@ def apply_update_plan(plan: dict) -> dict:
                     raise InstallError(f"Destination changed after preview: {target}")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(Path(item["source"]), target)
+                if sha256_file(target) != item["sha256"]:
+                    raise InstallError(f"Checksum verification failed: {target}")
                 created.append(target)
             elif operation == "replace":
                 shutil.copyfile(Path(item["source"]), target)
+                if sha256_file(target) != item["sha256"]:
+                    raise InstallError(f"Checksum verification failed: {target}")
             elif operation == "delete":
                 target.unlink()
             else:
