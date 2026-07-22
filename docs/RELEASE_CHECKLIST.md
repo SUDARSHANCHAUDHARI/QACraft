@@ -13,7 +13,7 @@
 ## CLI distribution
 
 - [ ] `python -m qacraft list` works from the source checkout.
-- [ ] `pip install --no-deps --no-build-isolation -e .` succeeds in a clean temporary environment.
+- [ ] `pip install --no-deps -e .` succeeds in a clean temporary environment using the declared isolated build backend.
 - [ ] The installed `qacraft doctor` command works outside the checkout directory.
 - [ ] The installed `python -m qacraft eval-list` command works outside the checkout directory.
 - [ ] `python3 scripts/qacraft.py` remains compatible.
