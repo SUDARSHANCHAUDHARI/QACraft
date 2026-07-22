@@ -27,6 +27,11 @@ REQUIRED_RELEASE_FILES = (
     "CONTRIBUTING.md",
     "SECURITY.md",
     "LICENSE",
+    "MANIFEST.in",
+    "setup.py",
+    "qacraft_build.py",
+    "qacraft/__init__.py",
+    "qacraft/__main__.py",
     "docs/INSTALLATION.md",
     "docs/COMPATIBILITY.md",
     "docs/EVALUATIONS.md",
@@ -145,6 +150,8 @@ def run_release_checks(root: Path) -> dict:
     readme = _read(root / "README.md")
     readme_requirements = (
         ("editable install", ("pip install --no-deps -e .",)),
+        ("wheel build", ("pip wheel",)),
+        ("source distribution build", ("setup.py sdist",)),
         ("install command", ("qacraft install", "scripts/qacraft.py install")),
         (
             "verify-install command",
@@ -171,7 +178,7 @@ def run_release_checks(root: Path) -> dict:
         checks,
         "readme_quickstart",
         not missing_readme,
-        "README documents editable setup, lifecycle, evaluation, demo, and release checks."
+        "README documents source and artifact setup, lifecycle, evaluation, demo, and release checks."
         if not missing_readme
         else f"README is missing: {missing_readme}",
     )
@@ -285,7 +292,6 @@ def run_release_checks(root: Path) -> dict:
         and "[project.scripts]" in metadata
         and 'qacraft = "qacraft:main"' in metadata
         and 'packages = ["qacraft"]' in metadata
-        and 'distribution_mode = "editable-source"' in metadata
         and (root / "qacraft" / "__init__.py").is_file()
         and (root / "qacraft" / "__main__.py").is_file()
     )
@@ -293,9 +299,46 @@ def run_release_checks(root: Path) -> dict:
         checks,
         "editable_cli",
         editable_cli_ok,
-        "Editable source installation exposes console and module entry points."
+        "Source and editable installations expose console and module entry points."
         if editable_cli_ok
-        else "Editable CLI metadata or entry-point files are incomplete.",
+        else "CLI metadata or entry-point files are incomplete.",
+    )
+
+    setup_text = _read(root / "setup.py")
+    builder_text = _read(root / "qacraft_build.py")
+    manifest_text = _read(root / "MANIFEST.in")
+    manifest_tokens = (
+        "recursive-include catalog",
+        "recursive-include docs",
+        "recursive-include evaluations",
+        "recursive-include qacraft",
+        "recursive-include schemas",
+        "recursive-include scripts",
+        "recursive-include shared",
+        "recursive-include skills",
+        "recursive-include tests",
+    )
+    builder_tokens = (
+        "BUNDLE_PATHS",
+        "BuildPyWithBundle",
+        "qacraft/bundle",
+        "Symbolic links are not allowed",
+    )
+    distribution_ok = (
+        'distribution_mode = "bundled-artifacts"' in metadata
+        and 'bundle_builder = "qacraft_build.py"' in metadata
+        and 'source_manifest = "MANIFEST.in"' in metadata
+        and "BuildPyWithBundle" in setup_text
+        and all(token in builder_text for token in builder_tokens)
+        and all(token in manifest_text for token in manifest_tokens)
+    )
+    _check(
+        checks,
+        "distribution_bundle",
+        distribution_ok,
+        "Wheel and source-distribution recipes include the reviewed runtime and canonical assets."
+        if distribution_ok
+        else "Distribution build recipe, manifest, or bundle metadata is incomplete.",
     )
 
     failed = [item["id"] for item in checks if not item["passed"]]
