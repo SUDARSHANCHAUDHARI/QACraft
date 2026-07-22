@@ -9,7 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "qacraft.py"
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from qacraft_adapters import build_file_specs, layout_for  # noqa: E402
+from qacraft_adapters import (  # noqa: E402
+    AGENT_SKILL_TRANSFORM,
+    build_file_specs,
+    layout_for,
+)
 
 
 class QACraftAdapterTests(unittest.TestCase):
@@ -54,6 +58,7 @@ class QACraftAdapterTests(unittest.TestCase):
             {
                 "source": "skills/feature-qa/SKILL.md",
                 "target": ".agents/skills/feature-qa/SKILL.md",
+                "transform": AGENT_SKILL_TRANSFORM,
             },
             codex_specs,
         )
@@ -64,6 +69,43 @@ class QACraftAdapterTests(unittest.TestCase):
             },
             codex_specs,
         )
+
+    def test_installed_agent_skill_uses_standard_frontmatter(self):
+        with tempfile.TemporaryDirectory() as parent:
+            project = Path(parent) / "project"
+            project.mkdir()
+            result = self.install(project, "codex", "feature-qa")
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            source = (ROOT / "skills/feature-qa/SKILL.md").read_text(encoding="utf-8")
+            installed_path = project / ".agents/skills/feature-qa/SKILL.md"
+            installed = installed_path.read_text(encoding="utf-8")
+            frontmatter = installed.split("---", 2)[1]
+
+            self.assertIn('name: "feature-qa"', frontmatter)
+            self.assertIn('description: "Turns a ticket', frontmatter)
+            self.assertIn("metadata:", frontmatter)
+            self.assertIn('qacraft-command: "/feature-qa"', frontmatter)
+            self.assertIn('qacraft-version: "1.0.0"', frontmatter)
+            self.assertIn('qacraft-status: "specification"', frontmatter)
+            self.assertNotIn("\ncommand:", frontmatter)
+            self.assertNotIn("\nversion:", frontmatter)
+            self.assertNotIn("\nstatus:", frontmatter)
+
+            source_body = source.split("\n---\n", 1)[1]
+            installed_body = installed.split("\n---\n", 1)[1]
+            self.assertEqual(installed_body, source_body)
+
+            manifest = json.loads(
+                (project / ".agents/qacraft/manifest.json").read_text(encoding="utf-8")
+            )
+            record = next(
+                item
+                for item in manifest["files"]
+                if item["path"] == ".agents/skills/feature-qa/SKILL.md"
+            )
+            self.assertEqual(record["transform"], AGENT_SKILL_TRANSFORM)
+            self.assertNotEqual(record["source_sha256"], record["sha256"])
 
     def test_codex_and_claude_code_installations_can_coexist(self):
         with tempfile.TemporaryDirectory() as parent:
