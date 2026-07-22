@@ -2,7 +2,7 @@
 
 Reusable AI skills, safe installation lifecycle, and deterministic behavior evaluations for everyday software QA work.
 
-QACraft 1.1.0 includes:
+QACraft 1.2.0 includes:
 
 - 25 detailed QA workflow skills
 - shared QA, evidence, security, approval, data, result, publication, and release policies
@@ -10,14 +10,13 @@ QACraft 1.1.0 includes:
 - preview-first install, verify, update, and uninstall commands
 - versioned manifests, SHA-256 verification, rollback, and conflict protection
 - deterministic structured-report evaluations for five priority QA skills
-- editable source-checkout `qacraft` and `python -m qacraft` entry points
+- `qacraft` and `python -m qacraft` entry points
+- verified self-contained wheel and source-distribution builds
 - generated HTML documentation, schemas, examples, templates, tests, and release guidance
 
 No third-party runtime Python packages are required. Python 3.10 or newer is supported.
 
-## Start here
-
-Install the command from a trusted QACraft checkout:
+## Start from a checkout
 
 ```bash
 python3 -m pip install --no-deps -e .
@@ -30,11 +29,29 @@ python3 scripts/demo.py
 
 Pip may create an isolated build environment to obtain the declared setuptools build backend. QACraft itself still installs with zero runtime dependencies because `--no-deps` is used.
 
-The editable installation keeps this checkout as the canonical source of skills, shared policies, schemas, rubrics, examples, and release files. It lets `qacraft` run from any current directory while preserving the reviewed source tree.
+The original `python3 scripts/qacraft.py ...` interface remains supported.
 
-Phase 3.1 does not claim complete wheel or PyPI distribution. Until bundled asset verification is delivered, use `pip install -e .` rather than `pip install .` or a package index. The original `python3 scripts/qacraft.py ...` interface remains supported.
+## Build verified artifacts
 
-The release check validates production documentation, version metadata, lean CI, rubric coverage, rubric-to-skill binding, and the published passing evaluation example. The end-to-end demo uses a temporary local project. It installs and updates a Codex skill pack, verifies the manifest, evaluates the passing fixture, uninstalls the pack, and confirms unrelated files remain untouched.
+Build a source distribution and wheel into `dist/`:
+
+```bash
+python3 setup.py sdist --dist-dir dist
+python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .
+```
+
+Install the built wheel locally:
+
+```bash
+python3 -m pip install --no-deps dist/qacraft-1.2.0-py3-none-any.whl
+qacraft doctor
+```
+
+The wheel contains a generated `qacraft/bundle/` assembled from an explicit allowlist during the temporary build. The repository keeps only one canonical copy of every skill, policy, schema, rubric, and document.
+
+The source distribution contains the canonical source tree and build recipe. Both artifacts are inspected, installed into isolated environments, and exercised through release checks, evaluation, and the Codex lifecycle in the test suite.
+
+No PyPI or other package-index publication is claimed or performed.
 
 ## Install into Codex
 
@@ -193,6 +210,9 @@ QACraft/
 ├── skills/
 ├── tests/
 ├── .github/workflows/
+├── MANIFEST.in
+├── qacraft_build.py
+├── setup.py
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── CHANGELOG.md
