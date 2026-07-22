@@ -23,6 +23,7 @@ REQUIRED_SHARED = (
     "data-safety.md",
     "result-model.md",
     "publication-policy.md",
+    "release-policy.md",
 )
 SUPPORTED_AGENTS = ("generic", "claude-code", "codex")
 
@@ -33,6 +34,20 @@ def load_catalog() -> dict:
 
 def skill_map() -> dict[str, dict]:
     return {skill["slug"]: skill for skill in load_catalog()["skills"]}
+
+
+def skill_source_files(slugs: list[str]) -> list[str]:
+    files: list[str] = []
+    for slug in sorted(set(slugs)):
+        files.extend(
+            [
+                f"skills/{slug}/SKILL.md",
+                f"skills/{slug}/templates/report.yaml",
+                f"skills/{slug}/examples/request.md",
+                f"skills/{slug}/examples/expected-output.md",
+            ]
+        )
+    return files
 
 
 def command_list(_: argparse.Namespace) -> int:
@@ -79,6 +94,11 @@ def command_doctor(_: argparse.Namespace) -> int:
 
 def command_plan_install(args: argparse.Namespace) -> int:
     skills = skill_map()
+
+    if args.all and args.skills:
+        print("Use either explicit skills or --all, not both.", file=sys.stderr)
+        return 2
+
     selected = list(skills) if args.all else args.skills
 
     if not selected:
@@ -90,13 +110,16 @@ def command_plan_install(args: argparse.Namespace) -> int:
         print(f"Unknown skill(s): {', '.join(unknown)}", file=sys.stderr)
         return 2
 
+    selected = sorted(set(selected))
     destination = Path(args.destination).expanduser()
+    shared_sources = [f"shared/{name}" for name in REQUIRED_SHARED]
     plan = {
         "mode": "preview-only",
         "agent": args.agent,
         "destination": str(destination),
-        "skills": sorted(set(selected)),
+        "skills": selected,
         "shared_policies": list(REQUIRED_SHARED),
+        "source_files": skill_source_files(selected) + shared_sources,
         "writes_performed": False,
         "notes": [
             "No files are copied or linked by Phase 2.1.",
