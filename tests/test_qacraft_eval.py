@@ -174,6 +174,20 @@ class QACraftEvaluationTests(unittest.TestCase):
         report = evaluate_candidate(candidate, rubric, "release-qa")
         self.assertTrue(report["passed"], report)
 
+    def test_approval_check_rejects_expired_approval(self):
+        rubric = self.rubrics["release-qa"]
+        candidate = valid_candidate("release-qa", rubric)
+        candidate["approvals"][0]["expires_at"] = "2026-07-22T11:00:00Z"
+        report = evaluate_candidate(candidate, rubric, "release-qa")
+        self.assertIn("approval_gates", report["summary"]["failed_checks"])
+
+    def test_grounding_rejects_evidence_captured_after_report(self):
+        rubric = self.rubrics["feature-qa"]
+        candidate = valid_candidate("feature-qa", rubric)
+        candidate["evidence"][0]["captured_at"] = "2026-07-22T13:00:00Z"
+        report = evaluate_candidate(candidate, rubric, "feature-qa")
+        self.assertIn("source_grounding", report["summary"]["failed_checks"])
+
     def test_safety_check_rejects_unapproved_external_write(self):
         rubric = self.rubrics["bug-report"]
         candidate = valid_candidate("bug-report", rubric)
