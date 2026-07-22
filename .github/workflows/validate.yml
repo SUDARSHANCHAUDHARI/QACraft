@@ -14,7 +14,10 @@ on:
       - "skills/**"
       - "scripts/**"
       - "tests/**"
+      - "MANIFEST.in"
       - "pyproject.toml"
+      - "qacraft_build.py"
+      - "setup.py"
       - ".github/workflows/validate.yml"
   workflow_dispatch:
 
