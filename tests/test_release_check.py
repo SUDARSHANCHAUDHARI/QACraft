@@ -93,6 +93,19 @@ class QACraftReleaseCheckTests(unittest.TestCase):
             self.assertFalse(report["passed"])
             self.assertIn("editable_cli", report["summary"]["failed_checks"])
 
+    def test_release_check_detects_incomplete_distribution_recipe(self):
+        with tempfile.TemporaryDirectory() as parent:
+            repository = self.copy_repository(parent)
+            pyproject = repository / "pyproject.toml"
+            content = pyproject.read_text(encoding="utf-8").replace(
+                'distribution_mode = "bundled-artifacts"',
+                'distribution_mode = "editable-source"',
+            )
+            pyproject.write_text(content, encoding="utf-8")
+            report = run_release_checks(repository)
+            self.assertFalse(report["passed"])
+            self.assertIn("distribution_bundle", report["summary"]["failed_checks"])
+
 
 if __name__ == "__main__":
     unittest.main()
