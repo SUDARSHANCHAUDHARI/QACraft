@@ -2,14 +2,15 @@
 
 Reusable AI skills, safe installation lifecycle, and deterministic behavior evaluations for everyday software QA work.
 
-QACraft 1.3.0 includes:
+QACraft 1.4.0 includes:
 
 - 25 detailed QA workflow skills
 - shared QA, evidence, security, approval, data, result, publication, and release policies
 - generic, Codex, Claude Code, GitHub Copilot, Gemini CLI, and OpenCode project adapters
 - preview-first install, verify, update, and uninstall commands
 - versioned manifests, SHA-256 verification, rollback, and conflict protection
-- deterministic structured-report evaluations for five priority QA skills
+- deterministic structured-report evaluations for ten priority QA skills
+- passing examples and targeted failure fixtures with declared expected results
 - `qacraft` and `python -m qacraft` entry points
 - verified self-contained wheel and source-distribution builds
 - generated HTML documentation, schemas, examples, templates, tests, and release guidance
@@ -40,18 +41,23 @@ python3 -m pip install build
 python3 -m build --sdist --wheel --outdir dist
 ```
 
-The test suite uses a dedicated build environment with `build`, setuptools, and wheel installed once. Compatibility commands such as `python3 setup.py sdist --dist-dir dist` and `python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .` also remain available when those build tools are already installed.
+Compatibility commands remain available when their build tools are installed:
+
+```bash
+python3 setup.py sdist --dist-dir dist
+python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .
+```
 
 Install the built wheel locally:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.3.0-py3-none-any.whl
+python3 -m pip install --no-deps dist/qacraft-1.4.0-py3-none-any.whl
 qacraft doctor
 ```
 
-The wheel contains a generated `qacraft/bundle/` assembled from an explicit allowlist during the temporary build. The repository keeps only one canonical copy of every skill, policy, schema, rubric, and document.
+The wheel contains a generated `qacraft/bundle/` assembled from an explicit allowlist during the temporary build. The repository keeps one canonical copy of every skill, policy, schema, rubric, fixture, and document.
 
-The source distribution contains the canonical source tree and build recipe. Both artifacts are inspected, installed into isolated environments, and exercised through release checks, evaluation, and the Codex lifecycle in the test suite.
+The source distribution contains the canonical source tree and build recipe. Both artifact types are inspected, installed into isolated environments, and exercised through release checks, evaluation, and agent lifecycle tests.
 
 No PyPI or other package-index publication is claimed or performed.
 
@@ -111,7 +117,7 @@ Install, update, and uninstall are preview-only without `--apply`. Existing unow
 ```bash
 qacraft eval-list
 qacraft evaluate \
-  --input evaluations/examples/feature-qa-pass.json
+  --input evaluations/examples/api-qa-pass.json
 ```
 
 Deterministic rubrics are included for:
@@ -121,8 +127,15 @@ Deterministic rubrics are included for:
 - `/bug-report`
 - `/verify-fix`
 - `/release-qa`
+- `/test-plan`
+- `/regression-scope`
+- `/customer-issue-repro`
+- `/api-qa`
+- `/staged-rollout-check`
 
 The evaluator checks schema conformance, source grounding, approval gates, evidence quality, verdict discipline, safety declarations, and output contracts. It does not call an AI model and does not prove that external evidence is authentic.
+
+Published examples and targeted failure cases are declared in `evaluations/fixtures.json`. Release readiness evaluates every listed fixture and confirms that each failure case triggers its declared policy check.
 
 ## Validate the repository
 
