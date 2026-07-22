@@ -2,6 +2,19 @@
 
 All notable QACraft changes are documented here.
 
+## Unreleased
+
+### Added
+
+- Editable source-checkout installation with `python -m pip install --no-deps -e .`.
+- `qacraft` console command and `python -m qacraft` module entry point.
+- Clean-environment smoke tests for both installed entry points.
+
+### Distribution boundary
+
+- Editable installation is supported from a trusted checkout.
+- Complete wheel, source-distribution, and package-index asset bundling remains intentionally unclaimed until Phase 3.2 verifies every canonical skill, policy, schema, rubric, and example.
+
 ## 1.1.0 — 2026-07-22
 
 ### Added
