@@ -1,11 +1,42 @@
 [project]
 name = "qacraft"
 version = "1.1.0"
-description = "Installable, verifiable QA skills and deterministic behavior evaluations"
+description = "Reusable QA skills with safe agent adapters and deterministic behavior evaluations"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "Sudarshan Chaudhari" }
+]
 requires-python = ">=3.10"
 dependencies = []
+keywords = [
+  "qa",
+  "software-testing",
+  "quality-assurance",
+  "ai-agents",
+  "codex",
+  "claude-code"
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Testing"
+]
+
+[project.urls]
+Homepage = "https://github.com/SUDARSHANCHAUDHARI/QACraft"
+Repository = "https://github.com/SUDARSHANCHAUDHARI/QACraft"
+Issues = "https://github.com/SUDARSHANCHAUDHARI/QACraft/issues"
+Documentation = "https://github.com/SUDARSHANCHAUDHARI/QACraft/tree/main/docs"
 
 [tool.qacraft]
 catalog = "catalog/skills.json"
 docs = "docs/index.html"
 validator = "scripts/validate_repo.py"
+evaluations = "evaluations/rubrics.json"
+release_check = "scripts/release_check.py"
