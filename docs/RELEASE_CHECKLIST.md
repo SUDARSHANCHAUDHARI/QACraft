@@ -10,6 +10,16 @@
 - [ ] `python3 scripts/demo.py` passes in an isolated temporary project.
 - [ ] The pull request's single Python 3.12 validation job passes.
 
+## CLI distribution
+
+- [ ] `python -m qacraft list` works from the source checkout.
+- [ ] `pip install --no-deps -e .` succeeds in a clean temporary environment using the declared isolated build backend.
+- [ ] The installed `qacraft doctor` command works outside the checkout directory.
+- [ ] The installed `python -m qacraft eval-list` command works outside the checkout directory.
+- [ ] `python3 scripts/qacraft.py` remains compatible.
+- [ ] Documentation clearly distinguishes editable source installation from unverified wheel, source-distribution, and package-index installation.
+- [ ] A wheel or package index is not published until Phase 3.2 verifies all bundled canonical assets.
+
 ## Installer lifecycle
 
 - [ ] Generic install, verify, update, and uninstall tests pass.
@@ -37,15 +47,15 @@
 - [ ] Installation, compatibility, evaluation, and production-readiness documentation is current.
 - [ ] Changelog contains the release version and date.
 - [ ] `pyproject.toml` version matches the changelog.
-- [ ] Project metadata includes README, MIT license, author, classifiers, and repository URLs.
+- [ ] Project metadata includes README, MIT license, author, classifiers, repository URLs, build backend, and console entry point.
 - [ ] Security boundaries and unsupported capabilities are visible.
-- [ ] Phase 2 roadmap is marked complete.
+- [ ] Completed roadmaps are marked complete and new work is tracked separately.
 - [ ] CI remains PR/manual only with exactly one Python 3.12 job.
 
 ## Publication
 
 - [ ] Merge using a reviewed, green pull request.
-- [ ] Create a signed or annotated `v1.1.0` tag when ready to publish.
+- [ ] Create a signed or annotated tag matching the release version when ready to publish.
 - [ ] Create GitHub release notes from `CHANGELOG.md`.
 - [ ] Enable `/docs` branch-based GitHub Pages only when desired and supported.
 - [ ] Do not add recurring or duplicate Actions workflows solely for publication.

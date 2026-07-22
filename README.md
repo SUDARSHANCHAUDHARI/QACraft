@@ -10,18 +10,29 @@ QACraft 1.1.0 includes:
 - preview-first install, verify, update, and uninstall commands
 - versioned manifests, SHA-256 verification, rollback, and conflict protection
 - deterministic structured-report evaluations for five priority QA skills
+- editable source-checkout `qacraft` and `python -m qacraft` entry points
 - generated HTML documentation, schemas, examples, templates, tests, and release guidance
 
-No third-party Python packages are required. Python 3.10 or newer is supported.
+No third-party runtime Python packages are required. Python 3.10 or newer is supported.
 
 ## Start here
 
+Install the command from a trusted QACraft checkout:
+
 ```bash
-python3 scripts/qacraft.py doctor
-python3 scripts/qacraft.py list
-python3 scripts/qacraft.py release-check
+python3 -m pip install --no-deps -e .
+qacraft doctor
+qacraft list
+python3 -m qacraft eval-list
+qacraft release-check
 python3 scripts/demo.py
 ```
+
+Pip may create an isolated build environment to obtain the declared setuptools build backend. QACraft itself still installs with zero runtime dependencies because `--no-deps` is used.
+
+The editable installation keeps this checkout as the canonical source of skills, shared policies, schemas, rubrics, examples, and release files. It lets `qacraft` run from any current directory while preserving the reviewed source tree.
+
+Phase 3.1 does not claim complete wheel or PyPI distribution. Until bundled asset verification is delivered, use `pip install -e .` rather than `pip install .` or a package index. The original `python3 scripts/qacraft.py ...` interface remains supported.
 
 The release check validates production documentation, version metadata, lean CI, rubric coverage, rubric-to-skill binding, and the published passing evaluation example. The end-to-end demo uses a temporary local project. It installs and updates a Codex skill pack, verifies the manifest, evaluates the passing fixture, uninstalls the pack, and confirms unrelated files remain untouched.
 
@@ -30,7 +41,7 @@ The release check validates production documentation, version metadata, lean CI,
 Preview:
 
 ```bash
-python3 scripts/qacraft.py install feature-qa bug-report \
+qacraft install feature-qa bug-report \
   --agent codex \
   --destination /path/to/project
 ```
@@ -38,7 +49,7 @@ python3 scripts/qacraft.py install feature-qa bug-report \
 Apply:
 
 ```bash
-python3 scripts/qacraft.py install feature-qa bug-report \
+qacraft install feature-qa bug-report \
   --agent codex \
   --destination /path/to/project \
   --apply
@@ -49,7 +60,7 @@ Skills are installed under `.agents/skills/`. QACraft stores an independent mani
 ## Install into Claude Code
 
 ```bash
-python3 scripts/qacraft.py install feature-qa bug-report \
+qacraft install feature-qa bug-report \
   --agent claude-code \
   --destination /path/to/project \
   --apply
@@ -60,16 +71,16 @@ Skills are installed under `.claude/skills/`. The Claude Code manifest is stored
 ## Verify, update, and uninstall
 
 ```bash
-python3 scripts/qacraft.py verify-install \
+qacraft verify-install \
   --agent codex \
   --destination /path/to/project
 
-python3 scripts/qacraft.py update feature-qa bug-report release-qa \
+qacraft update feature-qa bug-report release-qa \
   --agent codex \
   --destination /path/to/project \
   --apply
 
-python3 scripts/qacraft.py uninstall \
+qacraft uninstall \
   --agent codex \
   --destination /path/to/project \
   --apply
@@ -80,8 +91,8 @@ Install, update, and uninstall are preview-only without `--apply`. Existing unow
 ## Evaluate structured QA reports
 
 ```bash
-python3 scripts/qacraft.py eval-list
-python3 scripts/qacraft.py evaluate \
+qacraft eval-list
+qacraft evaluate \
   --input evaluations/examples/feature-qa-pass.json
 ```
 
@@ -101,7 +112,7 @@ The evaluator checks schema conformance, source grounding, approval gates, evide
 python3 scripts/generate_docs.py
 python3 scripts/validate_repo.py
 python3 -m unittest discover -s tests -v
-python3 scripts/qacraft.py release-check
+qacraft release-check
 python3 scripts/demo.py
 ```
 
@@ -175,6 +186,7 @@ QACraft/
 ├── catalog/
 ├── docs/
 ├── evaluations/
+├── qacraft/
 ├── schemas/
 ├── scripts/
 ├── shared/

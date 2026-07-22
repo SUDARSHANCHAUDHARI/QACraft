@@ -4,11 +4,25 @@
 
 | Component | Supported | Notes |
 |---|---:|---|
-| Python | 3.10+ | Standard library only |
+| Python | 3.10+ | Standard-library runtime only |
 | macOS | Yes | Filesystem lifecycle and evaluator supported |
 | Linux | Yes | Primary CI environment |
 | Windows | Expected | Uses `pathlib`; validate locally before release-critical use |
 | Network access | Not required | Installer and evaluator are local-only |
+
+## CLI distribution modes
+
+| Mode | Supported | Notes |
+|---|---:|---|
+| `python3 scripts/qacraft.py` | Yes | Direct source-checkout interface |
+| `python -m qacraft` from checkout | Yes | Uses the local canonical asset tree |
+| `pip install --no-deps -e .` | Yes | Provides `qacraft` and module entry points backed by the trusted checkout |
+| Wheel installation | Not yet | Phase 3.2 must bundle and verify every required asset first |
+| Source distribution | Not yet | Phase 3.2 must verify archive contents and installed behavior |
+| PyPI/package-index installation | Not yet | No public package claim is made |
+| Standalone executable | No | Not implemented |
+
+The editable installation is intentionally source-bound. It refuses to operate when the checkout no longer contains the CLI runtime, catalog, skills, shared policies, or evaluation rubrics. This prevents an incomplete installed wrapper from silently acting as a complete QACraft distribution.
 
 ## Agent adapters
 
@@ -40,6 +54,7 @@ The evaluator checks structured candidate reports for schema conformance, ground
 - Canonical QACraft source files remain unchanged.
 - Agent copies receive deterministic standards-compatible frontmatter normalization.
 - Failed installs and updates roll back QACraft-managed changes.
+- Editable CLI entry points delegate to the existing reviewed runtime instead of duplicating installer logic.
 
 ## Intentionally unsupported
 
@@ -47,7 +62,7 @@ The evaluator checks structured candidate reports for schema conformance, ground
 - User-global installation
 - Force overwrite or force deletion
 - Symlink-based installation
-- Package-manager installation
+- Unverified wheel, source-distribution, or package-index installation
 - Production/customer system access
 - Runtime permission enforcement through prompt text
 - Automatic GitHub Pages deployment

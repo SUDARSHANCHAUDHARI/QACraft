@@ -143,24 +143,35 @@ def run_release_checks(root: Path) -> dict:
     )
 
     readme = _read(root / "README.md")
-    readme_tokens = (
-        "scripts/qacraft.py install",
-        "scripts/qacraft.py verify-install",
-        "scripts/qacraft.py update",
-        "scripts/qacraft.py uninstall",
-        "scripts/qacraft.py evaluate",
-        "scripts/qacraft.py release-check",
-        "scripts/demo.py",
-        "docs/INSTALLATION.md",
-        "docs/COMPATIBILITY.md",
-        "docs/PRODUCTION_READINESS.md",
+    readme_requirements = (
+        ("editable install", ("pip install --no-deps -e .",)),
+        ("install command", ("qacraft install", "scripts/qacraft.py install")),
+        (
+            "verify-install command",
+            ("qacraft verify-install", "scripts/qacraft.py verify-install"),
+        ),
+        ("update command", ("qacraft update", "scripts/qacraft.py update")),
+        ("uninstall command", ("qacraft uninstall", "scripts/qacraft.py uninstall")),
+        ("evaluate command", ("qacraft evaluate", "scripts/qacraft.py evaluate")),
+        (
+            "release-check command",
+            ("qacraft release-check", "scripts/qacraft.py release-check"),
+        ),
+        ("demo command", ("scripts/demo.py",)),
+        ("installation guide", ("docs/INSTALLATION.md",)),
+        ("compatibility guide", ("docs/COMPATIBILITY.md",)),
+        ("production-readiness guide", ("docs/PRODUCTION_READINESS.md",)),
     )
-    missing_readme = [token for token in readme_tokens if token not in readme]
+    missing_readme = [
+        label
+        for label, alternatives in readme_requirements
+        if not any(token in readme for token in alternatives)
+    ]
     _check(
         checks,
         "readme_quickstart",
         not missing_readme,
-        "README documents install, lifecycle, evaluation, demo, and release checks."
+        "README documents editable setup, lifecycle, evaluation, demo, and release checks."
         if not missing_readme
         else f"README is missing: {missing_readme}",
     )
@@ -266,6 +277,25 @@ def run_release_checks(root: Path) -> dict:
         "Project metadata includes README, license, and repository URLs."
         if metadata_ok
         else "pyproject.toml is missing release metadata.",
+    )
+
+    editable_cli_ok = (
+        "[build-system]" in metadata
+        and 'build-backend = "setuptools.build_meta"' in metadata
+        and "[project.scripts]" in metadata
+        and 'qacraft = "qacraft:main"' in metadata
+        and 'packages = ["qacraft"]' in metadata
+        and 'distribution_mode = "editable-source"' in metadata
+        and (root / "qacraft" / "__init__.py").is_file()
+        and (root / "qacraft" / "__main__.py").is_file()
+    )
+    _check(
+        checks,
+        "editable_cli",
+        editable_cli_ok,
+        "Editable source installation exposes console and module entry points."
+        if editable_cli_ok
+        else "Editable CLI metadata or entry-point files are incomplete.",
     )
 
     failed = [item["id"] for item in checks if not item["passed"]]

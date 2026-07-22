@@ -85,6 +85,14 @@ class QACraftReleaseCheckTests(unittest.TestCase):
             self.assertFalse(report["passed"])
             self.assertIn("lean_ci", report["summary"]["failed_checks"])
 
+    def test_release_check_detects_missing_editable_entry_point(self):
+        with tempfile.TemporaryDirectory() as parent:
+            repository = self.copy_repository(parent)
+            (repository / "qacraft" / "__main__.py").unlink()
+            report = run_release_checks(repository)
+            self.assertFalse(report["passed"])
+            self.assertIn("editable_cli", report["summary"]["failed_checks"])
+
 
 if __name__ == "__main__":
     unittest.main()
