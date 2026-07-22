@@ -19,10 +19,11 @@ No third-party Python packages are required. Python 3.10 or newer is supported.
 ```bash
 python3 scripts/qacraft.py doctor
 python3 scripts/qacraft.py list
+python3 scripts/qacraft.py release-check
 python3 scripts/demo.py
 ```
 
-The end-to-end demo uses a temporary local project. It installs and updates a Codex skill pack, verifies the manifest, evaluates the passing fixture, uninstalls the pack, and confirms unrelated files remain untouched.
+The release check validates production documentation, version metadata, lean CI, rubric coverage, rubric-to-skill binding, and the published passing evaluation example. The end-to-end demo uses a temporary local project. It installs and updates a Codex skill pack, verifies the manifest, evaluates the passing fixture, uninstalls the pack, and confirms unrelated files remain untouched.
 
 ## Install into Codex
 
@@ -100,6 +101,8 @@ The evaluator checks schema conformance, source grounding, approval gates, evide
 python3 scripts/generate_docs.py
 python3 scripts/validate_repo.py
 python3 -m unittest discover -s tests -v
+python3 scripts/qacraft.py release-check
+python3 scripts/demo.py
 ```
 
 Generated documentation must be committed. The pull-request workflow runs one Python 3.12 validation job and does not run again after merge.
@@ -109,6 +112,7 @@ Generated documentation must be committed. The pull-request workflow runs one Py
 - [Installation and lifecycle](docs/INSTALLATION.md)
 - [Compatibility matrix](docs/COMPATIBILITY.md)
 - [Behavior evaluations](docs/EVALUATIONS.md)
+- [Production readiness](docs/PRODUCTION_READINESS.md)
 - [Phase 2 architecture](docs/PHASE_2.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Changelog](CHANGELOG.md)
