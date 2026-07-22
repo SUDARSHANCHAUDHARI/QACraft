@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from qacraft_adapters import ADAPTERS, build_file_specs, layout_for
+from qacraft_eval import EvaluationError, evaluate_file, load_rubrics
 from qacraft_installer import (
     InstallError,
     apply_install_plan,
@@ -23,6 +24,7 @@ from qacraft_updater import apply_update_plan, build_update_plan
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "catalog" / "skills.json"
 PYPROJECT = ROOT / "pyproject.toml"
+EVALUATION_RUBRICS = ROOT / "evaluations" / "rubrics.json"
 REQUIRED_SHARED = (
     "qa-standards.md",
     "security-boundaries.md",
@@ -34,6 +36,13 @@ REQUIRED_SHARED = (
     "release-policy.md",
 )
 SUPPORTED_AGENTS = tuple(ADAPTERS)
+EVALUATED_SKILLS = (
+    "feature-qa",
+    "ticket-review",
+    "bug-report",
+    "verify-fix",
+    "release-qa",
+)
 
 
 def load_catalog() -> dict:
@@ -110,6 +119,18 @@ def command_doctor(_: argparse.Namespace) -> int:
         if not path.exists():
             errors.append(f"Missing shared policy: {path.relative_to(ROOT)}")
 
+    try:
+        rubrics = load_rubrics(EVALUATION_RUBRICS)
+    except EvaluationError as exc:
+        errors.append(f"Evaluation rubrics are unreadable: {exc}")
+        rubrics = {}
+    missing_rubrics = sorted(set(EVALUATED_SKILLS) - set(rubrics))
+    extra_rubrics = sorted(set(rubrics) - set(EVALUATED_SKILLS))
+    if missing_rubrics:
+        errors.append(f"Missing evaluation rubrics: {missing_rubrics}")
+    if extra_rubrics:
+        errors.append(f"Unexpected evaluation rubrics: {extra_rubrics}")
+
     if errors:
         print("QACraft doctor found problems:", file=sys.stderr)
         for error in errors:
@@ -121,6 +142,7 @@ def command_doctor(_: argparse.Namespace) -> int:
     print(f"Skills: {len(skills)}")
     print("Generic install, update, verification, and uninstall: available")
     print("Verified Codex and Claude Code adapters: available")
+    print(f"Deterministic behavior rubrics: {len(rubrics)}")
     return 0
 
 
@@ -234,6 +256,32 @@ def command_uninstall(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_eval_list(args: argparse.Namespace) -> int:
+    try:
+        rubrics = load_rubrics(Path(args.rubrics))
+    except EvaluationError as exc:
+        print(f"Evaluation rubric loading failed: {exc}", file=sys.stderr)
+        return 1
+    for skill in sorted(rubrics):
+        decisions = ", ".join(rubrics[skill].get("allowed_decisions", []))
+        print(f"/{skill:<22} {decisions}")
+    return 0
+
+
+def command_evaluate(args: argparse.Namespace) -> int:
+    try:
+        report = evaluate_file(
+            Path(args.input),
+            Path(args.rubrics),
+            skill=args.skill,
+        )
+    except EvaluationError as exc:
+        print(f"Evaluation failed: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(report, indent=2))
+    return 0 if report["passed"] else 1
+
+
 def add_agent_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--agent",
@@ -253,7 +301,7 @@ def add_selection_arguments(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="qacraft",
-        description="Inspect and install QACraft skills safely.",
+        description="Install QACraft skills and evaluate structured QA behavior safely.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -289,6 +337,24 @@ def build_parser() -> argparse.ArgumentParser:
     item.add_argument("--destination", required=True)
     item.add_argument("--apply", action="store_true", help="Remove only unchanged manifest-owned files")
     item.set_defaults(func=command_uninstall)
+
+    item = sub.add_parser("eval-list", help="List skills with deterministic behavior rubrics")
+    item.add_argument(
+        "--rubrics",
+        default=str(EVALUATION_RUBRICS),
+        help="Rubric catalog JSON path",
+    )
+    item.set_defaults(func=command_eval_list)
+
+    item = sub.add_parser("evaluate", help="Evaluate a structured candidate report")
+    item.add_argument("--input", required=True, help="Candidate report JSON path")
+    item.add_argument("--skill", choices=EVALUATED_SKILLS, help="Override candidate skill")
+    item.add_argument(
+        "--rubrics",
+        default=str(EVALUATION_RUBRICS),
+        help="Rubric catalog JSON path",
+    )
+    item.set_defaults(func=command_evaluate)
     return parser
 
 

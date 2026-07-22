@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qacraft.dev/schemas/evaluation-report.schema.json",
+  "title": "QACraft Evaluation Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "skill",
+    "candidate_run_id",
+    "passed",
+    "score",
+    "max_score",
+    "checks",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "skill": { "type": "string", "minLength": 1 },
+    "candidate_run_id": { "type": ["string", "null"] },
+    "passed": { "type": "boolean" },
+    "score": { "type": "integer", "minimum": 0 },
+    "max_score": { "type": "integer", "minimum": 1 },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "passed", "findings"],
+        "properties": {
+          "id": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "findings": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed_checks", "failed_checks", "finding_count"],
+      "properties": {
+        "passed_checks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "failed_checks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "finding_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

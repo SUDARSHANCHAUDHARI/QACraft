@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.0.0",
+  "skills": {
+    "feature-qa": {
+      "required_gates": [
+        "Gate 1 · approve environment",
+        "Gate 2 · approve scope",
+        "Gate 3 · approve actions",
+        "Gate 4 · confirm finding",
+        "Gate 5 · approve test change",
+        "Gate 6 · review and publish"
+      ],
+      "allowed_decisions": [
+        "INVALID RUN",
+        "REJECT",
+        "BLOCKED",
+        "CONDITIONAL PASS",
+        "PASS"
+      ],
+      "success_decisions": [
+        "CONDITIONAL PASS",
+        "PASS"
+      ],
+      "success_requires_required_results_pass": true,
+      "decision_requirements": {
+        "CONDITIONAL PASS": {
+          "accepted_risks": 1
+        }
+      },
+      "required_outputs": [
+        "run-context.json",
+        "approval-ledger.jsonl",
+        "impact-analysis.md",
+        "test-plan.md",
+        "data-plan.md",
+        "execution-ledger.jsonl",
+        "evidence-manifest.json",
+        "findings/",
+        "regression/",
+        "report.yaml",
+        "report.html",
+        "summary.md",
+        "cleanup-report.md"
+      ]
+    },
+    "ticket-review": {
+      "required_gates": [
+        "Gate 1 · approve source set",
+        "Gate 2 · confirm decisions",
+        "Gate 3 · publish review"
+      ],
+      "allowed_decisions": [
+        "READY",
+        "READY WITH ASSUMPTIONS",
+        "NEEDS CLARIFICATION",
+        "BLOCKED",
+        "OUT OF SCOPE"
+      ],
+      "success_decisions": [
+        "READY",
+        "READY WITH ASSUMPTIONS"
+      ],
+      "success_requires_required_results_pass": false,
+      "decision_requirements": {
+        "READY WITH ASSUMPTIONS": {
+          "assumptions": 1
+        }
+      },
+      "required_outputs": [
+        "review-context.json",
+        "source-map.md",
+        "requirement-map.yaml",
+        "gaps.md",
+        "questions.md",
+        "decision-log.jsonl",
+        "ticket-comment.md",
+        "review-report.html"
+      ]
+    },
+    "bug-report": {
+      "required_gates": [
+        "Gate 1 · approve intake",
+        "Gate 2 · confirm duplicate decision",
+        "Gate 3 · publish defect"
+      ],
+      "allowed_decisions": [
+        "CONFIRMED DEFECT",
+        "PROBABLE DEFECT",
+        "NOT A PRODUCT DEFECT",
+        "INSUFFICIENT EVIDENCE",
+        "DUPLICATE CANDIDATE"
+      ],
+      "success_decisions": [
+        "CONFIRMED DEFECT",
+        "PROBABLE DEFECT",
+        "NOT A PRODUCT DEFECT",
+        "DUPLICATE CANDIDATE"
+      ],
+      "success_requires_required_results_pass": false,
+      "decision_requirements": {
+        "PROBABLE DEFECT": {
+          "uncertainties": 1
+        },
+        "DUPLICATE CANDIDATE": {
+          "uncertainties": 1
+        }
+      },
+      "required_outputs": [
+        "bug-context.json",
+        "original-observation.md",
+        "reproduction-plan.md",
+        "attempt-ledger.jsonl",
+        "evidence-manifest.json",
+        "duplicate-review.md",
+        "bug-report.md",
+        "publication-record.json",
+        "bug-report.html"
+      ]
+    },
+    "verify-fix": {
+      "required_gates": [
+        "Gate 1 · approve fix target",
+        "Gate 2 · confirm result",
+        "Gate 3 · publish verification"
+      ],
+      "allowed_decisions": [
+        "FIXED",
+        "FIXED WITH FOLLOW-UP",
+        "PARTIALLY FIXED",
+        "NOT FIXED",
+        "REGRESSION FOUND",
+        "BLOCKED",
+        "INCONCLUSIVE"
+      ],
+      "success_decisions": [
+        "FIXED",
+        "FIXED WITH FOLLOW-UP"
+      ],
+      "success_requires_required_results_pass": true,
+      "decision_requirements": {
+        "FIXED WITH FOLLOW-UP": {
+          "accepted_risks": 1
+        }
+      },
+      "required_outputs": [
+        "verification-context.json",
+        "baseline-result.md",
+        "candidate-attestation.json",
+        "verification-plan.md",
+        "attempt-ledger.jsonl",
+        "evidence-manifest.json",
+        "regression-results.yaml",
+        "verification-comment.md",
+        "verification-report.html"
+      ]
+    },
+    "release-qa": {
+      "required_gates": [
+        "Gate 1 · approve candidate",
+        "Gate 2 · approve release decision",
+        "Gate 3 · publish sign-off"
+      ],
+      "allowed_decisions": [
+        "PASS",
+        "CONDITIONAL PASS",
+        "BLOCKED",
+        "REJECT",
+        "INVALID CANDIDATE"
+      ],
+      "success_decisions": [
+        "PASS",
+        "CONDITIONAL PASS"
+      ],
+      "success_requires_required_results_pass": true,
+      "decision_requirements": {
+        "CONDITIONAL PASS": {
+          "accepted_risks": 1
+        }
+      },
+      "required_outputs": [
+        "release-context.json",
+        "release-manifest.json",
+        "evidence-index.yaml",
+        "coverage-matrix.csv",
+        "defect-register.yaml",
+        "risk-acceptance.jsonl",
+        "rollout-plan.md",
+        "release-decision.json",
+        "sign-off.md",
+        "release-report.html"
+      ]
+    }
+  }
+}
