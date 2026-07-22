@@ -70,24 +70,36 @@ class QACraftDistributionArtifactTests(unittest.TestCase):
             ),
         )
 
+        build_environment = cls.workspace / "build-venv"
+        venv.EnvBuilder(with_pip=True).create(build_environment)
+        build_python = cls.environment_python(build_environment)
         cls.run_command(
-            [sys.executable, "setup.py", "sdist", "--dist-dir", str(cls.dist)],
-            cwd=cls.source,
+            [
+                str(build_python),
+                "-m",
+                "pip",
+                "install",
+                "build",
+                "setuptools>=64",
+                "wheel",
+            ],
+            cwd=cls.workspace,
             timeout=180,
         )
         cls.run_command(
             [
-                sys.executable,
+                str(build_python),
                 "-m",
-                "pip",
-                "wheel",
-                "--no-deps",
-                "--wheel-dir",
+                "build",
+                "--no-isolation",
+                "--sdist",
+                "--wheel",
+                "--outdir",
                 str(cls.dist),
                 str(cls.source),
             ],
             cwd=cls.workspace,
-            timeout=180,
+            timeout=240,
         )
 
         wheels = sorted(cls.dist.glob("*.whl"))
