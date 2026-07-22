@@ -30,8 +30,8 @@ class QACraftCliTests(unittest.TestCase):
         result = self.run_cli("doctor")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("QACraft doctor passed.", result.stdout)
-        self.assertIn("Generic installer: available", result.stdout)
-        self.assertIn("Install verification and safe uninstall: available", result.stdout)
+        self.assertIn("Generic install, update, verification, and uninstall: available", result.stdout)
+        self.assertIn("Agent-specific installers: preview-only", result.stdout)
 
     def test_plan_install_is_preview_only_and_complete(self):
         with tempfile.TemporaryDirectory() as destination:
