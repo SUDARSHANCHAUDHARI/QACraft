@@ -2,11 +2,11 @@
 
 Reusable AI skills, safe installation lifecycle, and deterministic behavior evaluations for everyday software QA work.
 
-QACraft 1.2.0 includes:
+QACraft 1.3.0 includes:
 
 - 25 detailed QA workflow skills
 - shared QA, evidence, security, approval, data, result, publication, and release policies
-- generic, Codex, and Claude Code project adapters
+- generic, Codex, Claude Code, GitHub Copilot, Gemini CLI, and OpenCode project adapters
 - preview-first install, verify, update, and uninstall commands
 - versioned manifests, SHA-256 verification, rollback, and conflict protection
 - deterministic structured-report evaluations for five priority QA skills
@@ -45,7 +45,7 @@ The test suite uses a dedicated build environment with `build`, setuptools, and 
 Install the built wheel locally:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.2.0-py3-none-any.whl
+python3 -m pip install --no-deps dist/qacraft-1.3.0-py3-none-any.whl
 qacraft doctor
 ```
 
@@ -55,13 +55,23 @@ The source distribution contains the canonical source tree and build recipe. Bot
 
 No PyPI or other package-index publication is claimed or performed.
 
-## Install into Codex
+## Install into a verified agent
+
+Each adapter uses an officially documented project skill location and a separate QACraft manifest.
+
+| Agent | `--agent` value | Skill location | Manifest |
+|---|---|---|---|
+| Codex | `codex` | `.agents/skills/<skill>/` | `.agents/qacraft/manifest.json` |
+| Claude Code | `claude-code` | `.claude/skills/<skill>/` | `.claude/qacraft/manifest.json` |
+| GitHub Copilot | `github-copilot` | `.github/skills/<skill>/` | `.github/qacraft/manifest.json` |
+| Gemini CLI | `gemini-cli` | `.gemini/skills/<skill>/` | `.gemini/qacraft/manifest.json` |
+| OpenCode | `opencode` | `.opencode/skills/<skill>/` | `.opencode/qacraft/manifest.json` |
 
 Preview:
 
 ```bash
 qacraft install feature-qa bug-report \
-  --agent codex \
+  --agent github-copilot \
   --destination /path/to/project
 ```
 
@@ -69,43 +79,32 @@ Apply:
 
 ```bash
 qacraft install feature-qa bug-report \
-  --agent codex \
+  --agent github-copilot \
   --destination /path/to/project \
   --apply
 ```
 
-Skills are installed under `.agents/skills/`. QACraft stores an independent manifest under `.agents/qacraft/`.
-
-## Install into Claude Code
-
-```bash
-qacraft install feature-qa bug-report \
-  --agent claude-code \
-  --destination /path/to/project \
-  --apply
-```
-
-Skills are installed under `.claude/skills/`. The Claude Code manifest is stored under `.claude/qacraft/`.
+Replace `github-copilot` with any verified `--agent` value from the table. QACraft does not automatically detect an agent, install to user-global paths, or modify agent configuration files.
 
 ## Verify, update, and uninstall
 
 ```bash
 qacraft verify-install \
-  --agent codex \
+  --agent github-copilot \
   --destination /path/to/project
 
 qacraft update feature-qa bug-report release-qa \
-  --agent codex \
+  --agent github-copilot \
   --destination /path/to/project \
   --apply
 
 qacraft uninstall \
-  --agent codex \
+  --agent github-copilot \
   --destination /path/to/project \
   --apply
 ```
 
-Install, update, and uninstall are preview-only without `--apply`. Existing unowned files are never overwritten. Modified managed files block update and uninstall. Failed installs and updates roll back QACraft-managed changes.
+Install, update, and uninstall are preview-only without `--apply`. Existing unowned files are never overwritten. Modified managed files block update and uninstall. Failed installs and updates roll back QACraft-managed changes. Independent manifests allow different adapters to coexist in one repository.
 
 ## Evaluate structured QA reports
 

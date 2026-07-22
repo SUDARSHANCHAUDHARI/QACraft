@@ -28,13 +28,20 @@ Incomplete checkouts or installed bundles fail with an explicit missing-assets r
 
 ## Agent adapters
 
-| Adapter | Discovery path | Manifest | Lifecycle |
-|---|---|---|---|
-| Generic | `skills/<slug>/` | `.qacraft-manifest.json` | install, verify, update, uninstall |
-| Codex | `.agents/skills/<slug>/` | `.agents/qacraft/manifest.json` | install, verify, update, uninstall |
-| Claude Code | `.claude/skills/<slug>/` | `.claude/qacraft/manifest.json` | install, verify, update, uninstall |
+| Adapter | CLI value | Discovery path | Manifest | Official basis |
+|---|---|---|---|---|
+| Generic | `generic` | `skills/<slug>/` | `.qacraft-manifest.json` | Platform-neutral export |
+| Codex | `codex` | `.agents/skills/<slug>/` | `.agents/qacraft/manifest.json` | Codex project skills |
+| Claude Code | `claude-code` | `.claude/skills/<slug>/` | `.claude/qacraft/manifest.json` | Claude Code project skills |
+| GitHub Copilot | `github-copilot` | `.github/skills/<slug>/` | `.github/qacraft/manifest.json` | GitHub Copilot Agent Skills |
+| Gemini CLI | `gemini-cli` | `.gemini/skills/<slug>/` | `.gemini/qacraft/manifest.json` | Gemini CLI workspace skills |
+| OpenCode | `opencode` | `.opencode/skills/<slug>/` | `.opencode/qacraft/manifest.json` | OpenCode project skills |
 
 The destination passed to the CLI is always an explicit project or installation root. QACraft does not guess global directories or change agent configuration files.
+
+The three 1.3.0 adapters use their product-native project paths even where an agent also supports `.agents/skills` or `.claude/skills` aliases. This keeps ownership and uninstall behavior explicit. Do not install the same skill name through multiple adapters in one project unless the target agents' precedence behavior has been reviewed.
+
+Cursor and Windsurf are not listed as verified Agent Skills adapters because this release does not rely on undocumented discovery paths. Their instruction-file features are outside this adapter contract.
 
 ## Behavior evaluations
 
@@ -67,6 +74,7 @@ The evaluator checks structured candidate reports for schema conformance, ground
 - User-global installation
 - Force overwrite or force deletion
 - Symlink-based installation
+- Undocumented agent discovery paths
 - Unreviewed package-index publication
 - Production/customer system access
 - Runtime permission enforcement through prompt text

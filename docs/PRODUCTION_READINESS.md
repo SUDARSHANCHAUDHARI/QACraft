@@ -1,6 +1,6 @@
 # QACraft production readiness
 
-QACraft 1.2.0 is production-ready as a **source-controlled skill distribution, locally buildable package, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, evidence-authenticity service, or published package-index release.
+QACraft 1.3.0 is production-ready as a **source-controlled skill distribution, locally buildable package, verified multi-agent adapter set, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, evidence-authenticity service, or published package-index release.
 
 ## Supported production use
 
@@ -8,13 +8,27 @@ QACraft 1.2.0 is production-ready as a **source-controlled skill distribution, l
 - run QACraft from a checkout, editable installation, local wheel, or local source distribution;
 - build a self-contained wheel from an explicit canonical-source allowlist;
 - inspect and install wheel and source-distribution artifacts in isolated environments;
-- install selected skills into explicit Codex, Claude Code, or generic project layouts;
+- install selected skills into explicit Codex, Claude Code, GitHub Copilot, Gemini CLI, OpenCode, or generic project layouts;
+- run multiple adapters in one project using independent manifests;
 - preview and safely apply installation changes;
 - verify installed files against checksummed manifests;
 - update an installed skill set with conflict detection and rollback;
 - uninstall only unchanged manifest-owned files;
 - evaluate structured reports for five priority QA skills with deterministic policy checks;
 - regenerate and validate static documentation.
+
+## Verified adapter acceptance
+
+An agent adapter is added only when its project-level `SKILL.md` discovery path is supported by official product documentation. Each adapter must have:
+
+- an explicit project skill root;
+- an independent QACraft shared-policy root and manifest;
+- deterministic Agent Skills frontmatter transformation;
+- install, verify, update, uninstall, conflict, and cleanup coverage;
+- coexistence tests with other verified adapters;
+- no automatic global installation or product configuration modification.
+
+The verified native roots are `.agents/skills`, `.claude/skills`, `.github/skills`, `.gemini/skills`, and `.opencode/skills`. Cursor and Windsurf are excluded from the verified adapter set until equivalent official Agent Skills discovery paths are available.
 
 ## Release acceptance criteria
 
@@ -52,7 +66,7 @@ The unit suite builds and validates both distribution artifacts. The pull-reques
 - agent manifests are independent;
 - update failures restore managed state;
 - uninstall refuses modified or missing managed files;
-- unrelated project files and directories are preserved.
+- unrelated project files, directories, and other adapter installations are preserved.
 
 ## Behavior evaluation safety
 
@@ -75,8 +89,8 @@ QACraft does not:
 - authenticate approvers or evidence producers;
 - prove that screenshots, logs, traces, hashes, or source references are genuine;
 - execute product tests or connect to customer environments;
-- modify tickets, repositories, deployment systems, or publication targets;
-- automatically install into user-global agent directories;
+- modify tickets, repositories, deployment systems, agent configuration files, or publication targets;
+- automatically detect agents or install into user-global directories;
 - silently overwrite or force-delete files;
 - publish packages or documentation automatically.
 
@@ -89,7 +103,7 @@ Adopters must provide the runtime sandbox, identity, authorisation, evidence sto
 - macOS and Windows use cross-platform `pathlib` operations but are not both continuously tested in GitHub Actions.
 - editable, local wheel, and local source-distribution installation are supported.
 - no PyPI/package-index publication is claimed.
-- Codex and Claude Code project paths are explicitly mapped; user-global paths remain unsupported.
+- five product-native project adapters are explicitly mapped; user-global paths remain unsupported.
 - five skills have deterministic behavior rubrics; all 25 skills remain installable.
 
 See `docs/COMPATIBILITY.md` for the complete matrix.
@@ -107,4 +121,4 @@ The repository intentionally uses:
 
 ## Release decision
 
-A release must not be tagged or published when `qacraft release-check` reports any failed check, artifact tests fail, the pull-request validation job is unsuccessful, the demo fails, or generated documentation differs from committed files.
+A release must not be tagged or published when `qacraft release-check` reports any failed check, adapter lifecycle tests fail, artifact tests fail, the pull-request validation job is unsuccessful, the demo fails, or generated documentation differs from committed files.

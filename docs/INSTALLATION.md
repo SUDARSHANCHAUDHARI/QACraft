@@ -1,6 +1,6 @@
 # QACraft installation and lifecycle guide
 
-QACraft 1.2.0 has no third-party runtime dependencies and requires Python 3.10 or newer.
+QACraft 1.3.0 has no third-party runtime dependencies and requires Python 3.10 or newer.
 
 ## Editable installation from a checkout
 
@@ -31,14 +31,14 @@ The source distribution contains the canonical source tree, tests, manifest, and
 Install a local wheel:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.2.0-py3-none-any.whl
+python3 -m pip install --no-deps dist/qacraft-1.3.0-py3-none-any.whl
 qacraft doctor
 ```
 
 Install a local source distribution:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.2.0.tar.gz
+python3 -m pip install --no-deps dist/qacraft-1.3.0.tar.gz
 qacraft doctor
 ```
 
@@ -60,39 +60,42 @@ qacraft release-check
 python3 scripts/demo.py
 ```
 
-## Install into Codex
+## Verified project adapters
 
-The destination is the target project root. QACraft installs selected skills under `.agents/skills/` and keeps its manifest under `.agents/qacraft/`.
+| Agent | CLI value | Skills | QACraft manifest |
+|---|---|---|---|
+| Codex | `codex` | `.agents/skills/<skill>/` | `.agents/qacraft/manifest.json` |
+| Claude Code | `claude-code` | `.claude/skills/<skill>/` | `.claude/qacraft/manifest.json` |
+| GitHub Copilot | `github-copilot` | `.github/skills/<skill>/` | `.github/qacraft/manifest.json` |
+| Gemini CLI | `gemini-cli` | `.gemini/skills/<skill>/` | `.gemini/qacraft/manifest.json` |
+| OpenCode | `opencode` | `.opencode/skills/<skill>/` | `.opencode/qacraft/manifest.json` |
 
-Preview:
+These are project-level locations documented by their respective agent platforms. QACraft deliberately uses the native path for each adapter and does not install into user-global directories.
+
+## Install a skill pack
+
+The destination is the target project root. Preview is the default:
 
 ```bash
 qacraft install feature-qa bug-report \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project
 ```
 
-Apply:
+Apply the reviewed plan:
 
 ```bash
 qacraft install feature-qa bug-report \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project \
   --apply
 ```
 
-## Install into Claude Code
-
-```bash
-qacraft install feature-qa bug-report \
-  --agent claude-code \
-  --destination /path/to/project \
-  --apply
-```
-
-Claude Code skills are written under `.claude/skills/`; the manifest is stored under `.claude/qacraft/`.
+Replace `gemini-cli` with any verified CLI value in the table. Installed `SKILL.md` files receive deterministic Agent Skills frontmatter while preserving the complete canonical instruction body.
 
 ## Generic installation
+
+Use the generic adapter only when another integration will load the exported files itself:
 
 ```bash
 qacraft install feature-qa \
@@ -105,7 +108,7 @@ qacraft install feature-qa \
 
 ```bash
 qacraft verify-install \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project
 ```
 
@@ -113,13 +116,15 @@ A healthy installation returns exit code `0`. Missing or modified managed files 
 
 ## Update the installed skill set
 
+The supplied skills represent the desired final set:
+
 ```bash
 qacraft update feature-qa bug-report release-qa \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project
 
 qacraft update feature-qa bug-report release-qa \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project \
   --apply
 ```
@@ -130,16 +135,22 @@ QACraft refuses to update modified managed files or overwrite unrelated files. F
 
 ```bash
 qacraft uninstall \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project
 
 qacraft uninstall \
-  --agent codex \
+  --agent gemini-cli \
   --destination /path/to/project \
   --apply
 ```
 
-Only unchanged files recorded in the selected adapter manifest are removed. Unrelated project files and directories are preserved.
+Only unchanged files recorded in the selected adapter manifest are removed. Unrelated project files, other adapters, and non-empty directories are preserved.
+
+## Adapter coexistence
+
+Every verified adapter owns a separate manifest and shared-policy directory. Different adapters may coexist in one repository and can be verified, updated, or uninstalled independently.
+
+Avoid installing the same skill slug through multiple adapters unless you have reviewed how the target agents resolve duplicate skill names across native and alias paths.
 
 ## Evaluate a candidate QA report
 
@@ -162,7 +173,7 @@ The test suite:
 2. inspects both archives for required and forbidden files;
 3. installs each artifact into a separate environment;
 4. runs `doctor`, `eval-list`, `evaluate`, and `release-check`;
-5. performs Codex install, verification, and uninstall;
+5. performs lifecycle verification for agent adapters;
 6. confirms unrelated project content remains intact.
 
 ## Operational boundaries

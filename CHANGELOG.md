@@ -2,6 +2,25 @@
 
 All notable QACraft changes are documented here.
 
+## 1.3.0 — 2026-07-22
+
+### Added
+
+- Verified GitHub Copilot project adapter using `.github/skills/<skill>/SKILL.md`.
+- Verified Gemini CLI workspace adapter using `.gemini/skills/<skill>/SKILL.md`.
+- Verified OpenCode project adapter using `.opencode/skills/<skill>/SKILL.md`.
+- Independent manifests and shared-policy directories for every new adapter.
+- Install, verify, update, uninstall, conflict, frontmatter, and multi-adapter coexistence tests.
+- Official documentation references for every newly verified discovery path.
+
+### Safety
+
+- No automatic agent detection or user-global installation.
+- No agent configuration-file modification.
+- Native project paths are used even where compatible alias paths also exist.
+- Cursor and Windsurf remain unverified until equivalent official Agent Skills discovery paths are documented.
+- Duplicate skill names across multiple adapter paths are not recommended without reviewing agent precedence behavior.
+
 ## 1.2.0 — 2026-07-22
 
 ### Added

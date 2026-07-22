@@ -38,6 +38,30 @@ ADAPTERS = {
         manifest_path=Path(".claude/qacraft/manifest.json"),
         documentation="https://code.claude.com/docs/en/slash-commands",
     ),
+    "github-copilot": AdapterLayout(
+        agent="github-copilot",
+        skills_root=Path(".github/skills"),
+        shared_root=Path(".github/qacraft/shared"),
+        manifest_path=Path(".github/qacraft/manifest.json"),
+        documentation=(
+            "https://docs.github.com/en/copilot/how-tos/copilot-on-github/"
+            "customize-copilot/customize-cloud-agent/add-skills"
+        ),
+    ),
+    "gemini-cli": AdapterLayout(
+        agent="gemini-cli",
+        skills_root=Path(".gemini/skills"),
+        shared_root=Path(".gemini/qacraft/shared"),
+        manifest_path=Path(".gemini/qacraft/manifest.json"),
+        documentation="https://geminicli.com/docs/cli/skills/",
+    ),
+    "opencode": AdapterLayout(
+        agent="opencode",
+        skills_root=Path(".opencode/skills"),
+        shared_root=Path(".opencode/qacraft/shared"),
+        manifest_path=Path(".opencode/qacraft/manifest.json"),
+        documentation="https://opencode.ai/docs/skills",
+    ),
 }
 
 SKILL_FILES = (
