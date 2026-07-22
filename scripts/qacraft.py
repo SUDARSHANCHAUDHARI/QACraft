@@ -17,6 +17,7 @@ from qacraft_installer import (
     build_uninstall_plan,
     verify_installation,
 )
+from qacraft_updater import apply_update_plan, build_update_plan
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "catalog" / "skills.json"
@@ -112,8 +113,8 @@ def command_doctor(_: argparse.Namespace) -> int:
     print("QACraft doctor passed.")
     print(f"Repository: {ROOT}")
     print(f"Skills: {len(skills)}")
-    print("Generic installer: available with explicit --apply")
-    print("Install verification and safe uninstall: available")
+    print("Generic install, update, verification, and uninstall: available")
+    print("Agent-specific installers: preview-only")
     return 0
 
 
@@ -139,7 +140,7 @@ def command_install(args: argparse.Namespace) -> int:
     if selected is None:
         return status
     if args.agent != "generic":
-        print("Only the generic adapter supports installation.", file=sys.stderr)
+        print("Only the generic adapter supports installation; agent-specific installers are preview-only.", file=sys.stderr)
         return 2
     try:
         plan = build_install_plan(ROOT, Path(args.destination), source_files_for(selected))
@@ -148,6 +149,28 @@ def command_install(args: argparse.Namespace) -> int:
             plan = apply_install_plan(plan, qacraft_version=load_version(), agent=args.agent, skills=selected)
     except (InstallError, OSError, RuntimeError) as exc:
         print(f"Installation failed: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(plan, indent=2))
+    return 0
+
+
+def command_update(args: argparse.Namespace) -> int:
+    selected, status = select_skills(args)
+    if selected is None:
+        return status
+    try:
+        plan = build_update_plan(
+            ROOT,
+            Path(args.destination),
+            source_files_for(selected),
+            qacraft_version=load_version(),
+            agent="generic",
+            skills=selected,
+        )
+        if args.apply:
+            plan = apply_update_plan(plan)
+    except (InstallError, OSError, RuntimeError) as exc:
+        print(f"Update failed: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(plan, indent=2))
     return 0
@@ -199,6 +222,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_selection_arguments(item)
     item.add_argument("--apply", action="store_true", help="Perform the reviewed installation")
     item.set_defaults(func=command_install)
+
+    item = sub.add_parser("update", help="Preview or apply a safe generic update")
+    item.add_argument("skills", nargs="*", help="Desired skill slugs after update")
+    item.add_argument("--all", action="store_true", help="Select all skills")
+    item.add_argument("--destination", required=True, help="Existing generic installation")
+    item.add_argument("--apply", action="store_true", help="Perform the reviewed update")
+    item.set_defaults(func=command_update)
 
     item = sub.add_parser("verify-install", help="Verify installed files against the manifest")
     item.add_argument("--destination", required=True)
