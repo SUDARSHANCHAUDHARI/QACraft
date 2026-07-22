@@ -8,8 +8,10 @@
 - `schemas/` contains versioned structured-data contracts.
 - `evaluations/rubrics.json` contains deterministic behavior rules for the five priority skills.
 - `scripts/qacraft_adapters.py` defines verified installation layouts.
+- `qacraft_build.py` defines the reviewed wheel bundle allowlist.
+- `MANIFEST.in` defines source-distribution inputs.
 
-Do not hand-edit generated skill or HTML files unless the generator or catalog is changed too.
+Do not hand-edit generated skill or HTML files unless the generator or catalog is changed too. Do not commit a generated `qacraft/bundle` directory; it is created only in temporary build output.
 
 ## Development workflow
 
@@ -23,12 +25,12 @@ Do not hand-edit generated skill or HTML files unless the generator or catalog i
 python3 scripts/generate_docs.py
 python3 scripts/validate_repo.py
 python3 -m unittest discover -s tests -v
-python3 scripts/qacraft.py release-check
+qacraft release-check
 python3 scripts/demo.py
 ```
 
 6. Review generated and hand-written diffs.
-7. Explain behavior, compatibility, safety, rollback, and GitHub Actions impact in the pull request.
+7. Explain behavior, compatibility, safety, rollback, artifact, and GitHub Actions impact in the pull request.
 
 Complete branch edits before opening the pull request when practical. QACraft intentionally runs one automatic Python 3.12 job per PR and no automatic post-merge validation.
 
@@ -62,6 +64,23 @@ Changes to install, verify, update, rollback, or uninstall behavior must preserv
 
 Do not add force-overwrite, force-delete, automatic global installation, automatic agent detection, or agent configuration modification without an independently reviewed security design.
 
+## Distribution requirements
+
+Changes to packaging must preserve:
+
+- one canonical repository source tree;
+- generation of `qacraft/bundle` only under temporary build output;
+- an explicit reviewed bundle allowlist;
+- rejection of symbolic links and source paths outside the repository;
+- exclusion of VCS metadata, caches, bytecode, environments, build output, and egg metadata;
+- complete wheel and source-distribution archive inspection;
+- isolated installation and lifecycle tests for both artifact types;
+- explicit failure for missing installed assets;
+- zero QACraft runtime dependencies;
+- no package-index publication without separate approval.
+
+Every path required by installed `doctor`, lifecycle commands, evaluation, demo, or release checks must be represented in the build allowlist and source manifest.
+
 ## Evaluation requirements
 
 A behavior rubric must remain bound to its canonical skill:
@@ -84,4 +103,4 @@ Add tests for every new rule and at least one targeted failure case.
 
 ## Release changes
 
-Update `CHANGELOG.md`, `docs/COMPATIBILITY.md`, and `docs/PRODUCTION_READINESS.md` when preparing a release. Follow `docs/RELEASE_CHECKLIST.md`. A release branch must not be merged when `qacraft release-check`, the demo, or the pull-request validation job fails.
+Update `CHANGELOG.md`, `docs/COMPATIBILITY.md`, and `docs/PRODUCTION_READINESS.md` when preparing a release. Follow `docs/RELEASE_CHECKLIST.md`. A release branch must not be merged when `qacraft release-check`, artifact verification, the demo, or the pull-request validation job fails.
