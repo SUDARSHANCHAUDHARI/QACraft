@@ -172,6 +172,29 @@ def _copy_exclusive(source: Path, target: Path) -> None:
         shutil.copyfileobj(source_handle, target_handle)
 
 
+def _remove_empty_managed_directories(paths: list[Path], destination: Path) -> None:
+    """Remove only empty ancestors of managed paths, never the project root."""
+
+    directories: set[Path] = set()
+    for path in paths:
+        current = path.parent
+        while current != destination:
+            try:
+                current.relative_to(destination)
+            except ValueError:
+                break
+            directories.add(current)
+            current = current.parent
+
+    for directory in sorted(directories, key=lambda item: len(item.parts), reverse=True):
+        if directory.is_symlink():
+            continue
+        try:
+            directory.rmdir()
+        except OSError:
+            pass
+
+
 def apply_install_plan(
     plan: dict,
     *,
@@ -239,7 +262,7 @@ def apply_install_plan(
     except Exception:
         for path in reversed(created_files):
             path.unlink(missing_ok=True)
-        _remove_empty_directories(destination)
+        _remove_empty_managed_directories(created_files + [manifest_path], destination)
         raise
 
     result = dict(plan)
@@ -354,6 +377,7 @@ def apply_uninstall_plan(plan: dict) -> dict:
     ):
         raise InstallError("Installation changed after uninstall preview.")
 
+    managed_paths: list[Path] = []
     for relative_name in current["files"]:
         relative = safe_relative_path(relative_name, label="manifest file")
         reject_symlinked_target_path(destination, relative)
@@ -362,29 +386,13 @@ def apply_uninstall_plan(plan: dict) -> dict:
             raise InstallError(f"Managed file changed after preview: {target}")
         if sha256_file(target) != current["file_checksums"].get(relative_name):
             raise InstallError(f"Managed file changed after preview: {target}")
-        target.unlink()
+        managed_paths.append(target)
 
+    for target in managed_paths:
+        target.unlink()
     manifest_path.unlink()
-    _remove_empty_directories(destination)
+    _remove_empty_managed_directories(managed_paths + [manifest_path], destination)
+
     result = dict(current)
     result.update({"mode": "applied", "writes_performed": True})
     return result
-
-
-def _remove_empty_directories(destination: Path) -> None:
-    if not destination.exists() or destination.is_symlink():
-        return
-    directories = sorted(
-        (path for path in destination.rglob("*") if path.is_dir() and not path.is_symlink()),
-        key=lambda path: len(path.parts),
-        reverse=True,
-    )
-    for directory in directories:
-        try:
-            directory.rmdir()
-        except OSError:
-            pass
-    try:
-        destination.rmdir()
-    except OSError:
-        pass
