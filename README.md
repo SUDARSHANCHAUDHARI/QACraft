@@ -1,16 +1,167 @@
 # QACraft
 
-A repository of 25 detailed, evidence-based QA workflow specifications for everyday QA work.
+Reusable QA skills with safe project installers and deterministic behavior evaluations for everyday software testing work.
 
-Each skill contains:
+QACraft provides:
 
-- `SKILL.md`: platform-neutral operating specification
-- `overview.html`: self-contained visual documentation
-- `examples/request.md`: sample invocation
-- `examples/expected-output.md`: sample controlled result
-- `templates/report.yaml`: structured output starting point
+- 25 detailed, evidence-based QA workflow skills;
+- verified project adapters for Codex and Claude Code;
+- a platform-neutral generic adapter;
+- preview-first install, verify, update, rollback, and uninstall lifecycle management;
+- deterministic behavior evaluation for five priority QA skills;
+- shared approval, evidence, security, data, result, publication, and release policies;
+- versioned schemas, examples, templates, generated static documentation, validation, and tests.
 
-The pack also includes shared policies, JSON Schemas, generated documentation, validation scripts, tests, and a GitHub Actions workflow.
+QACraft skill files describe controlled QA behavior. Runtime permissions, identities, secrets, network access, production access, and external-system writes must still be enforced by the surrounding tool and approval layer.
+
+## Quick start
+
+Requirements:
+
+- Python 3.10 or newer
+- A local QACraft checkout
+- No third-party Python dependencies
+
+Validate QACraft:
+
+```bash
+python3 scripts/qacraft.py doctor
+python3 scripts/validate_repo.py
+python3 -m unittest discover -s tests -v
+python3 scripts/qacraft.py release-check
+```
+
+List the available skills:
+
+```bash
+python3 scripts/qacraft.py list
+```
+
+## Install skills into a project
+
+### Codex
+
+Preview:
+
+```bash
+python3 scripts/qacraft.py install feature-qa bug-report \
+  --agent codex \
+  --destination /path/to/project
+```
+
+Apply after reviewing the JSON plan:
+
+```bash
+python3 scripts/qacraft.py install feature-qa bug-report \
+  --agent codex \
+  --destination /path/to/project \
+  --apply
+```
+
+Codex layout:
+
+```text
+/path/to/project/.agents/skills/<skill>/
+/path/to/project/.agents/qacraft/manifest.json
+```
+
+### Claude Code
+
+```bash
+python3 scripts/qacraft.py install feature-qa bug-report \
+  --agent claude-code \
+  --destination /path/to/project \
+  --apply
+```
+
+Claude Code layout:
+
+```text
+/path/to/project/.claude/skills/<skill>/
+/path/to/project/.claude/qacraft/manifest.json
+```
+
+Both adapters can coexist in one project because their paths and manifests are independent.
+
+### Generic
+
+```bash
+python3 scripts/qacraft.py install feature-qa \
+  --agent generic \
+  --destination /path/to/installation \
+  --apply
+```
+
+The generic adapter preserves `skills/` and `shared/` paths and uses `.qacraft-manifest.json`.
+
+See `docs/INSTALLATION.md` for complete setup, safety behavior, and troubleshooting.
+
+## Manage an installation
+
+Verify every managed checksum:
+
+```bash
+python3 scripts/qacraft.py verify-install \
+  --agent codex \
+  --destination /path/to/project
+```
+
+Update to the desired final skill set:
+
+```bash
+python3 scripts/qacraft.py update feature-qa bug-report release-qa \
+  --agent codex \
+  --destination /path/to/project \
+  --apply
+```
+
+Uninstall only unchanged manifest-owned files:
+
+```bash
+python3 scripts/qacraft.py uninstall \
+  --agent codex \
+  --destination /path/to/project \
+  --apply
+```
+
+QACraft has no force-overwrite or force-delete option. Existing unowned files, symbolic-link redirection, changed sources, stale manifests, and modified managed files are rejected.
+
+## Evaluate structured QA behavior
+
+Deterministic rubrics are included for:
+
+- `/feature-qa`
+- `/ticket-review`
+- `/bug-report`
+- `/verify-fix`
+- `/release-qa`
+
+List evaluation rubrics:
+
+```bash
+python3 scripts/qacraft.py eval-list
+```
+
+Evaluate the included passing example:
+
+```bash
+python3 scripts/qacraft.py evaluate \
+  --input evaluations/examples/feature-qa-pass.json
+```
+
+Every candidate is checked for:
+
+1. schema conformance;
+2. source grounding and hallucination control;
+3. version-bound approval gates;
+4. evidence references, integrity, timestamps, and privacy review;
+5. verdict discipline and release-blocker handling;
+6. permission, secret, personal-data, external-write, and cleanup safety;
+7. the skill-specific output contract.
+
+Evaluation is local, deterministic, read-only, and makes no external model or network calls. It checks supplied structured data; it does not prove evidence authenticity or runtime permission enforcement.
+
+See `docs/EVALUATIONS.md` for the full contract.
 
 ## Skill catalog
 
@@ -57,96 +208,55 @@ The pack also includes shared policies, JSON Schemas, generated documentation, v
 - `/qa-handoff`
 - `/qa-retrospective`
 
-## Browse the HTML documentation
+## Documentation
 
-Open:
+- `docs/INSTALLATION.md` — supported installation and lifecycle commands
+- `docs/COMPATIBILITY.md` — agent, Python, operating-system, and evaluation coverage
+- `docs/DEMO.md` — isolated end-to-end walkthrough
+- `docs/EVALUATIONS.md` — structured behavior-evaluation contract
+- `docs/PRODUCTION_READINESS.md` — supported production use and deliberate boundaries
+- `RELEASE_CHECKLIST.md` — release acceptance process
+- `CHANGELOG.md` — version history
 
-```text
-docs/index.html
-```
-
-Or serve the repository locally:
+Browse the generated static documentation at `docs/index.html`, or serve it locally:
 
 ```bash
 python3 scripts/serve.py
 ```
 
-Then open the URL printed by the script.
+Automatic GitHub Pages deployment is intentionally not included, avoiding recurring Actions usage. Static files can be published manually.
 
-## Validate the repository
+## Repository maintenance
 
-No third-party Python packages are required.
-
-```bash
-python3 scripts/validate_repo.py
-python3 -m unittest discover -s tests -v
-```
-
-## Regenerate documentation
-
-The machine-readable source is `catalog/skills.json`.
+`catalog/skills.json` is the machine-readable source for generated skill documentation.
 
 ```bash
 python3 scripts/generate_docs.py
 python3 scripts/validate_repo.py
+python3 -m unittest discover -s tests -v
+python3 scripts/qacraft.py release-check
 ```
 
-## Use with AI coding agents
-
-### Claude Code
-
-Copy or link the selected folder into your project or user skills directory:
-
-```text
-.claude/skills/<skill-name>/
-```
-
-Keep the shared policy files available and instruct the agent to read them before using a skill.
-
-### Codex and repository-aware agents
-
-Place this repository beside the project or copy the selected `SKILL.md` into the project. `AGENTS.md` explains how to resolve commands and shared policies.
-
-### Other agents
-
-Load the selected `SKILL.md` plus the shared policies as instructions. The workflow remains platform-neutral, but tool names and external-system actions need adapters.
+Generated `SKILL.md` and HTML files are committed so users can inspect the repository without a build step.
 
 ## Important safety model
 
-These documents are specifications, not security enforcement.
+QACraft documents and validates workflow structure. It does not independently enforce:
 
-Production use requires:
+- filesystem, command, repository, secret, or network permissions;
+- authenticated approval identity;
+- tenant and customer-data boundaries;
+- evidence authenticity;
+- production access;
+- ticket, repository, deployment, or publication writes.
 
-- least-privilege runtime permissions,
-- command and network allowlists,
-- secret isolation,
-- version-bound approvals,
-- evidence privacy and integrity controls,
-- safe data ownership and cleanup,
-- idempotent external writes,
-- conflict-aware publication,
-- monitoring and audit logs.
+Adopters must implement least privilege, identity, authorisation, evidence privacy, idempotency, audit logging, and external-system safeguards through the runtime.
 
-Never grant production, customer, or security-sensitive access merely because a skill file describes safe behaviour.
+Never grant production, customer, or security-sensitive access merely because a skill describes safe behavior.
 
-## Repository structure
+## Compatibility
 
-```text
-qacraft/
-├── catalog/
-├── docs/
-├── schemas/
-├── scripts/
-├── shared/
-├── skills/
-├── tests/
-├── .github/workflows/
-├── AGENTS.md
-├── CLAUDE.md
-├── CONTRIBUTING.md
-├── SECURITY.md
-└── README.md
-```
+See `docs/COMPATIBILITY.md` for the supported adapter matrix and deliberate non-support. Python 3.12 is continuously validated in one pull-request job; project metadata supports Python 3.10 and newer.
 
 ## License
 
