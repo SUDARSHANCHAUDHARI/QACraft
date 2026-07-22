@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import sys
@@ -29,7 +30,8 @@ class QACraftCliTests(unittest.TestCase):
         result = self.run_cli("doctor")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("QACraft doctor passed.", result.stdout)
-        self.assertIn("Write operations: disabled", result.stdout)
+        self.assertIn("Generic installer: available", result.stdout)
+        self.assertIn("Agent-specific installers: preview-only", result.stdout)
 
     def test_plan_install_is_preview_only_and_complete(self):
         with tempfile.TemporaryDirectory() as destination:
@@ -53,6 +55,85 @@ class QACraftCliTests(unittest.TestCase):
             self.assertIn("skills/feature-qa/SKILL.md", plan["source_files"])
             self.assertIn("skills/bug-report/templates/report.yaml", plan["source_files"])
             self.assertEqual(list(Path(destination).iterdir()), [])
+
+    def test_generic_install_without_apply_is_preview_only(self):
+        with tempfile.TemporaryDirectory() as parent:
+            destination = Path(parent) / "skills"
+            result = self.run_cli(
+                "install",
+                "feature-qa",
+                "--destination",
+                str(destination),
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            plan = json.loads(result.stdout)
+            self.assertEqual(plan["mode"], "preview-only")
+            self.assertFalse(plan["writes_performed"])
+            self.assertFalse(destination.exists())
+
+    def test_generic_install_apply_creates_files_and_manifest(self):
+        with tempfile.TemporaryDirectory() as parent:
+            destination = Path(parent) / "skills"
+            result = self.run_cli(
+                "install",
+                "feature-qa",
+                "--destination",
+                str(destination),
+                "--apply",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output = json.loads(result.stdout)
+            self.assertEqual(output["mode"], "applied")
+            self.assertTrue(output["writes_performed"])
+
+            installed = destination / "skills" / "feature-qa" / "SKILL.md"
+            manifest_path = destination / ".qacraft-manifest.json"
+            self.assertTrue(installed.is_file())
+            self.assertTrue(manifest_path.is_file())
+
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["agent"], "generic")
+            self.assertEqual(manifest["skills"], ["feature-qa"])
+            record = next(
+                item for item in manifest["files"] if item["path"] == "skills/feature-qa/SKILL.md"
+            )
+            actual_hash = hashlib.sha256(installed.read_bytes()).hexdigest()
+            self.assertEqual(record["sha256"], actual_hash)
+
+    def test_generic_install_refuses_existing_destination_file(self):
+        with tempfile.TemporaryDirectory() as parent:
+            destination = Path(parent) / "skills"
+            conflict = destination / "skills" / "feature-qa" / "SKILL.md"
+            conflict.parent.mkdir(parents=True)
+            conflict.write_text("keep me", encoding="utf-8")
+
+            result = self.run_cli(
+                "install",
+                "feature-qa",
+                "--destination",
+                str(destination),
+                "--apply",
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("already exist", result.stderr)
+            self.assertEqual(conflict.read_text(encoding="utf-8"), "keep me")
+            self.assertFalse((destination / ".qacraft-manifest.json").exists())
+
+    def test_agent_specific_install_is_rejected(self):
+        with tempfile.TemporaryDirectory() as parent:
+            destination = Path(parent) / "skills"
+            result = self.run_cli(
+                "install",
+                "feature-qa",
+                "--agent",
+                "codex",
+                "--destination",
+                str(destination),
+                "--apply",
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("preview-only", result.stderr)
+            self.assertFalse(destination.exists())
 
     def test_plan_install_rejects_unknown_skill(self):
         result = self.run_cli(
