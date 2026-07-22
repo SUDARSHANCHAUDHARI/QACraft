@@ -46,6 +46,7 @@ SKILL_FILES = (
     "examples/request.md",
     "examples/expected-output.md",
 )
+AGENT_SKILL_TRANSFORM = "agent-skill-frontmatter"
 
 
 def layout_for(agent: str) -> AdapterLayout:
@@ -67,12 +68,13 @@ def build_file_specs(
 
     for slug in sorted(set(skills)):
         for relative_name in SKILL_FILES:
-            specs.append(
-                {
-                    "source": (Path("skills") / slug / relative_name).as_posix(),
-                    "target": (layout.skills_root / slug / relative_name).as_posix(),
-                }
-            )
+            spec = {
+                "source": (Path("skills") / slug / relative_name).as_posix(),
+                "target": (layout.skills_root / slug / relative_name).as_posix(),
+            }
+            if agent != "generic" and relative_name == "SKILL.md":
+                spec["transform"] = AGENT_SKILL_TRANSFORM
+            specs.append(spec)
 
     for name in shared_policies:
         specs.append(
