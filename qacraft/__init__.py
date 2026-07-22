@@ -1,9 +1,4 @@
-"""QACraft source-checkout command entry point.
-
-Phase 3.1 intentionally supports editable installation from a QACraft source
-checkout. Wheel and source-distribution asset bundling are handled separately so
-an incomplete package cannot silently omit skills, policies, schemas, or rubrics.
-"""
+"""QACraft command entry points for source and built distributions."""
 
 from __future__ import annotations
 
@@ -13,32 +8,60 @@ from pathlib import Path
 from types import ModuleType
 from typing import Sequence
 
-_RUNTIME_MODULE = "_qacraft_source_runtime"
+_RUNTIME_MODULE = "_qacraft_runtime"
+_PACKAGE_ROOT = Path(__file__).resolve().parent
+_REQUIRED_RUNTIME_PATHS = (
+    Path("scripts/qacraft.py"),
+    Path("catalog/skills.json"),
+    Path("skills"),
+    Path("shared"),
+    Path("schemas"),
+    Path("evaluations/rubrics.json"),
+)
 
 
-class SourceCheckoutRequired(RuntimeError):
-    """Raised when the installed wrapper cannot locate the QACraft checkout."""
+class DistributionAssetsMissing(RuntimeError):
+    """Raised when neither checkout nor bundled runtime assets are complete."""
+
+
+# Compatibility name retained for Phase 3.1 callers.
+SourceCheckoutRequired = DistributionAssetsMissing
+
+
+def _missing_assets(root: Path) -> list[str]:
+    return [
+        relative.as_posix()
+        for relative in _REQUIRED_RUNTIME_PATHS
+        if not (root / relative).exists()
+    ]
+
+
+def runtime_root() -> Path:
+    """Return the complete checkout or bundled QACraft runtime root."""
+
+    candidates = (
+        ("source checkout", _PACKAGE_ROOT.parent),
+        ("installed bundle", _PACKAGE_ROOT / "bundle"),
+    )
+    failures: list[str] = []
+    for label, candidate in candidates:
+        missing = _missing_assets(candidate)
+        if not missing:
+            return candidate
+        failures.append(f"{label}: {', '.join(missing)}")
+
+    raise DistributionAssetsMissing(
+        "QACraft runtime assets are incomplete. Reinstall from a verified wheel or "
+        "source distribution, or clone the repository and run "
+        "`python -m pip install --no-deps -e .`. Missing assets — "
+        + "; ".join(failures)
+    )
 
 
 def source_root() -> Path:
-    """Return the QACraft source root used by the editable installation."""
+    """Compatibility alias returning the active QACraft runtime root."""
 
-    root = Path(__file__).resolve().parents[1]
-    required = (
-        root / "scripts" / "qacraft.py",
-        root / "catalog" / "skills.json",
-        root / "skills",
-        root / "shared",
-        root / "evaluations" / "rubrics.json",
-    )
-    missing = [path.relative_to(root).as_posix() for path in required if not path.exists()]
-    if missing:
-        raise SourceCheckoutRequired(
-            "QACraft's current console command requires an editable source checkout. "
-            "Clone the repository and run `python -m pip install --no-deps -e .`. "
-            f"Missing source assets: {', '.join(missing)}"
-        )
-    return root
+    return runtime_root()
 
 
 def _load_runtime() -> ModuleType:
@@ -46,7 +69,7 @@ def _load_runtime() -> ModuleType:
     if existing is not None:
         return existing
 
-    root = source_root()
+    root = runtime_root()
     scripts = root / "scripts"
     script = scripts / "qacraft.py"
     scripts_value = str(scripts)
@@ -55,7 +78,7 @@ def _load_runtime() -> ModuleType:
 
     spec = importlib.util.spec_from_file_location(_RUNTIME_MODULE, script)
     if spec is None or spec.loader is None:
-        raise SourceCheckoutRequired(f"Unable to load QACraft runtime from {script}")
+        raise DistributionAssetsMissing(f"Unable to load QACraft runtime from {script}")
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[_RUNTIME_MODULE] = module
@@ -68,14 +91,20 @@ def _load_runtime() -> ModuleType:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the existing QACraft CLI through an editable installation."""
+    """Run QACraft from a checkout, editable install, wheel, or source distribution."""
 
     try:
         runtime = _load_runtime()
-    except SourceCheckoutRequired as exc:
+    except DistributionAssetsMissing as exc:
         print(str(exc), file=sys.stderr)
         return 2
     return int(runtime.main(list(argv) if argv is not None else None))
 
 
-__all__ = ["SourceCheckoutRequired", "main", "source_root"]
+__all__ = [
+    "DistributionAssetsMissing",
+    "SourceCheckoutRequired",
+    "main",
+    "runtime_root",
+    "source_root",
+]

@@ -1,10 +1,8 @@
 # QACraft installation and lifecycle guide
 
-QACraft is dependency-free and requires Python 3.10 or newer.
+QACraft 1.2.0 has no third-party runtime dependencies and requires Python 3.10 or newer.
 
-## Install the source-checkout CLI
-
-Phase 3.1 supports an editable installation from a QACraft checkout:
+## Editable installation from a checkout
 
 ```bash
 python3 -m pip install --no-deps -e .
@@ -13,17 +11,44 @@ qacraft list
 python3 -m qacraft eval-list
 ```
 
-The editable installation keeps the repository as the source of canonical skills, shared policies, schemas, rubrics, examples, and release files. The `qacraft` console command and `python -m qacraft` therefore work from any current directory while continuing to use the reviewed checkout.
+The editable installation uses the reviewed checkout as its runtime and asset root.
 
-This phase does **not** claim that a wheel or PyPI package contains the complete QACraft asset set. Wheel and source-distribution asset verification belong to Phase 3.2. Until that work is complete, use `pip install -e .` from a trusted checkout rather than `pip install .` or a package index.
+## Build local artifacts
 
-The original script interface remains supported:
+Use the standard build frontend from a clean checkout:
+
+```bash
+python3 -m pip install build
+python3 -m build --sdist --wheel --outdir dist
+```
+
+The test suite creates a dedicated build environment and installs `build`, setuptools, and wheel once before running `python -m build --no-isolation`. Compatibility commands such as `python3 setup.py sdist --dist-dir dist` and `python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .` remain available when those build tools are already installed.
+
+The wheel build creates `qacraft/bundle/` only inside setuptools' temporary build directory. It copies an explicit allowlist of canonical runtime files and rejects symbolic links. The generated bundle is not committed to the repository.
+
+The source distribution contains the canonical source tree, tests, manifest, and build recipe. Installing the source distribution builds the same self-contained wheel layout.
+
+Install a local wheel:
+
+```bash
+python3 -m pip install --no-deps dist/qacraft-1.2.0-py3-none-any.whl
+qacraft doctor
+```
+
+Install a local source distribution:
+
+```bash
+python3 -m pip install --no-deps dist/qacraft-1.2.0.tar.gz
+qacraft doctor
+```
+
+No package-index publication is currently claimed. Use artifacts built from a trusted commit.
+
+## Legacy checkout interface
 
 ```bash
 python3 scripts/qacraft.py list
 ```
-
-Every command below may use either `qacraft` after editable installation or `python3 scripts/qacraft.py` from the checkout.
 
 ## Repository validation
 
@@ -31,12 +56,8 @@ Every command below may use either `qacraft` after editable installation or `pyt
 qacraft doctor
 python3 scripts/validate_repo.py
 python3 -m unittest discover -s tests -v
-```
-
-## List available skills
-
-```bash
-qacraft list
+qacraft release-check
+python3 scripts/demo.py
 ```
 
 ## Install into Codex
@@ -73,8 +94,6 @@ Claude Code skills are written under `.claude/skills/`; the manifest is stored u
 
 ## Generic installation
 
-Use the generic adapter when another agent or integration will load the files itself:
-
 ```bash
 qacraft install feature-qa \
   --agent generic \
@@ -94,8 +113,6 @@ A healthy installation returns exit code `0`. Missing or modified managed files 
 
 ## Update the installed skill set
 
-The supplied skills represent the desired final set:
-
 ```bash
 qacraft update feature-qa bug-report release-qa \
   --agent codex \
@@ -111,17 +128,11 @@ QACraft refuses to update modified managed files or overwrite unrelated files. F
 
 ## Uninstall
 
-Preview:
-
 ```bash
 qacraft uninstall \
   --agent codex \
   --destination /path/to/project
-```
 
-Apply:
-
-```bash
 qacraft uninstall \
   --agent codex \
   --destination /path/to/project \
@@ -134,8 +145,7 @@ Only unchanged files recorded in the selected adapter manifest are removed. Unre
 
 ```bash
 qacraft eval-list
-qacraft evaluate \
-  --input evaluations/examples/feature-qa-pass.json
+qacraft evaluate --input /path/to/candidate.json
 ```
 
 Evaluation exit codes:
@@ -144,15 +154,17 @@ Evaluation exit codes:
 - `1`: the report was readable but failed one or more checks
 - `2`: the report or rubric could not be evaluated
 
-## Source-only commands
+## Distribution verification
 
-`release-check` and `scripts/demo.py` validate the QACraft source release itself. Run them from the checkout:
+The test suite:
 
-```bash
-qacraft release-check
-python3 scripts/demo.py
-```
+1. builds the wheel and source distribution from a temporary source copy;
+2. inspects both archives for required and forbidden files;
+3. installs each artifact into a separate environment;
+4. runs `doctor`, `eval-list`, `evaluate`, and `release-check`;
+5. performs Codex install, verification, and uninstall;
+6. confirms unrelated project content remains intact.
 
 ## Operational boundaries
 
-QACraft does not automatically grant filesystem, network, browser, repository, customer, or production permissions. Installed skills remain instruction files. The runtime that executes them must enforce least privilege, secrets isolation, approval gates, logging, evidence privacy, and safe external writes.
+QACraft does not automatically grant filesystem, network, browser, repository, customer, or production permissions. Installed skills remain instruction files. The runtime that executes them must enforce least privilege, secret isolation, approval gates, logging, evidence privacy, and safe external writes.

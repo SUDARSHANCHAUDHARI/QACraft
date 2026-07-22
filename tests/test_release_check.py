@@ -42,7 +42,7 @@ class QACraftReleaseCheckTests(unittest.TestCase):
     def test_release_check_passes_for_repository(self):
         report = run_release_checks(ROOT)
         self.assertTrue(report["passed"], report)
-        self.assertEqual(report["version"], "1.1.0")
+        self.assertEqual(report["version"], "1.2.0")
         self.assertEqual(report["summary"]["failed_checks"], [])
 
     def test_release_check_cli_emits_json(self):
@@ -50,7 +50,7 @@ class QACraftReleaseCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         report = json.loads(result.stdout)
         self.assertTrue(report["passed"])
-        self.assertEqual(report["version"], "1.1.0")
+        self.assertEqual(report["version"], "1.2.0")
 
     def test_release_check_detects_missing_release_file(self):
         with tempfile.TemporaryDirectory() as parent:
@@ -92,6 +92,19 @@ class QACraftReleaseCheckTests(unittest.TestCase):
             report = run_release_checks(repository)
             self.assertFalse(report["passed"])
             self.assertIn("editable_cli", report["summary"]["failed_checks"])
+
+    def test_release_check_detects_incomplete_distribution_recipe(self):
+        with tempfile.TemporaryDirectory() as parent:
+            repository = self.copy_repository(parent)
+            pyproject = repository / "pyproject.toml"
+            content = pyproject.read_text(encoding="utf-8").replace(
+                'distribution_mode = "bundled-artifacts"',
+                'distribution_mode = "editable-source"',
+            )
+            pyproject.write_text(content, encoding="utf-8")
+            report = run_release_checks(repository)
+            self.assertFalse(report["passed"])
+            self.assertIn("distribution_bundle", report["summary"]["failed_checks"])
 
 
 if __name__ == "__main__":

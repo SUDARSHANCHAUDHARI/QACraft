@@ -1,0 +1,36 @@
+include AGENTS.md
+include CLAUDE.md
+include CHANGELOG.md
+include CONTRIBUTING.md
+include LICENSE
+include MANIFEST.in
+include README.md
+include SECURITY.md
+include index.html
+include pyproject.toml
+include qacraft_build.py
+include setup.py
+
+recursive-include .github/workflows *.yml *.yaml
+recursive-include adapters *
+recursive-include catalog *
+recursive-include docs *
+recursive-include evaluations *
+recursive-include qacraft *.py
+recursive-include schemas *
+recursive-include scripts *.py
+recursive-include shared *
+recursive-include skills *
+recursive-include tests *.py
+
+global-exclude *.py[cod]
+global-exclude .DS_Store
+global-exclude __pycache__
+prune .git
+prune .mypy_cache
+prune .pytest_cache
+prune .ruff_cache
+prune .venv
+prune build
+prune dist
+prune venv

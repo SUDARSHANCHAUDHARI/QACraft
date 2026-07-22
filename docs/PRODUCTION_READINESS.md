@@ -1,36 +1,46 @@
 # QACraft production readiness
 
-QACraft 1.1.0 is production-ready as a **source-controlled skill distribution and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, or evidence-authenticity service.
+QACraft 1.2.0 is production-ready as a **source-controlled skill distribution, locally buildable package, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, evidence-authenticity service, or published package-index release.
 
 ## Supported production use
 
 - maintain 25 versioned QA workflow specifications;
+- run QACraft from a checkout, editable installation, local wheel, or local source distribution;
+- build a self-contained wheel from an explicit canonical-source allowlist;
+- inspect and install wheel and source-distribution artifacts in isolated environments;
 - install selected skills into explicit Codex, Claude Code, or generic project layouts;
 - preview and safely apply installation changes;
 - verify installed files against checksummed manifests;
 - update an installed skill set with conflict detection and rollback;
 - uninstall only unchanged manifest-owned files;
 - evaluate structured reports for five priority QA skills with deterministic policy checks;
-- regenerate and validate static documentation;
-- run all validation locally without third-party Python dependencies.
+- regenerate and validate static documentation.
 
 ## Release acceptance criteria
-
-The release is acceptable only when all of the following pass:
 
 ```bash
 python3 scripts/generate_docs.py
 python3 scripts/validate_repo.py
 python3 -m unittest discover -s tests -v
-python3 scripts/qacraft.py release-check
+qacraft release-check
 python3 scripts/demo.py
 ```
 
-The pull-request workflow runs repository validation, the complete unit suite, and generated-file consistency in one Python 3.12 job. `release-check` and the end-to-end demo are covered by tests and can also be run directly before tagging.
+The unit suite builds and validates both distribution artifacts. The pull-request workflow runs repository validation, the complete unit suite, and generated-file consistency in one Python 3.12 job.
 
-## Safety properties
+## Distribution safety properties
 
-### Filesystem lifecycle
+- the repository keeps one canonical source copy;
+- wheel bundles are generated only in temporary build directories;
+- copied paths come from an explicit allowlist;
+- symbolic links and paths outside the repository are rejected;
+- cache, bytecode, VCS, virtual-environment, build, and egg-info files are excluded;
+- incomplete installed bundles produce an explicit missing-assets error;
+- wheel and source-distribution archives are inspected before acceptance;
+- each artifact is installed and lifecycle-tested in an isolated environment;
+- no package-index upload occurs automatically.
+
+## Filesystem lifecycle safety
 
 - every destination is explicit;
 - preview is the default;
@@ -44,18 +54,18 @@ The pull-request workflow runs repository validation, the complete unit suite, a
 - uninstall refuses modified or missing managed files;
 - unrelated project files and directories are preserved.
 
-### Behavior evaluation
+## Behavior evaluation safety
 
 - evaluation is local and read-only;
-- no external model or network call is made;
+- no external model or runtime network call is made;
 - observed claims require evidence references;
-- evidence records require source provenance, timestamps, privacy review, and integrity hashes;
-- approvals require approver, role, timestamps, context hash, document hash, and validity;
+- evidence records require provenance, timestamps, privacy review, and integrity hashes;
+- approvals require identity fields, timestamps, context hash, document hash, and validity;
 - expired or post-generated approvals are rejected;
-- required non-pass results and open release blockers prevent success outcomes where applicable;
-- conditional outcomes require recorded risk, assumption, or uncertainty according to the skill rubric;
+- success outcomes are blocked by required non-pass results or open release blockers;
+- conditional outcomes require recorded risk, assumption, or uncertainty;
 - external-write declarations require approval and idempotency;
-- output paths must remain safe and skill output contracts must be complete.
+- output paths must remain safe and output contracts complete.
 
 ## Operational boundaries
 
@@ -68,7 +78,7 @@ QACraft does not:
 - modify tickets, repositories, deployment systems, or publication targets;
 - automatically install into user-global agent directories;
 - silently overwrite or force-delete files;
-- deploy documentation automatically.
+- publish packages or documentation automatically.
 
 Adopters must provide the runtime sandbox, identity, authorisation, evidence storage, external-system integrations, and audit controls described by the shared policies.
 
@@ -77,8 +87,10 @@ Adopters must provide the runtime sandbox, identity, authorisation, evidence sto
 - Python 3.10 or newer is required.
 - Python 3.12 is continuously validated on Ubuntu.
 - macOS and Windows use cross-platform `pathlib` operations but are not both continuously tested in GitHub Actions.
+- editable, local wheel, and local source-distribution installation are supported.
+- no PyPI/package-index publication is claimed.
 - Codex and Claude Code project paths are explicitly mapped; user-global paths remain unsupported.
-- Five skills have deterministic behavior rubrics; all 25 skills remain installable.
+- five skills have deterministic behavior rubrics; all 25 skills remain installable.
 
 See `docs/COMPATIBILITY.md` for the complete matrix.
 
@@ -90,11 +102,9 @@ The repository intentionally uses:
 - Python 3.12 only;
 - no automatic post-merge run;
 - no scheduled workflow;
-- no automatic Pages deployment;
+- no automatic package or Pages deployment;
 - concurrency cancellation for superseded PR runs.
-
-Release and documentation publishing can be performed manually to avoid recurring GitHub Actions usage.
 
 ## Release decision
 
-A release must not be tagged when `qacraft release-check` reports any failed check, when the pull-request validation job is not successful, when the demo fails, or when generated documentation differs from committed files.
+A release must not be tagged or published when `qacraft release-check` reports any failed check, artifact tests fail, the pull-request validation job is unsuccessful, the demo fails, or generated documentation differs from committed files.

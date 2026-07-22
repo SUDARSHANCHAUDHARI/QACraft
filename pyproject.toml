@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qacraft"
-version = "1.1.0"
+version = "1.2.0"
 description = "Reusable QA skills with safe agent adapters and deterministic behavior evaluations"
 readme = "README.md"
 license = { text = "MIT" }
@@ -50,4 +50,6 @@ docs = "docs/index.html"
 validator = "scripts/validate_repo.py"
 evaluations = "evaluations/rubrics.json"
 release_check = "scripts/release_check.py"
-distribution_mode = "editable-source"
+distribution_mode = "bundled-artifacts"
+bundle_builder = "qacraft_build.py"
+source_manifest = "MANIFEST.in"

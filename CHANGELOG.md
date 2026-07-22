@@ -2,18 +2,25 @@
 
 All notable QACraft changes are documented here.
 
-## Unreleased
+## 1.2.0 — 2026-07-22
 
 ### Added
 
 - Editable source-checkout installation with `python -m pip install --no-deps -e .`.
 - `qacraft` console command and `python -m qacraft` module entry point.
-- Clean-environment smoke tests for both installed entry points.
+- Self-contained wheel and source-distribution build recipes.
+- Explicit allowlisted copying of canonical runtime assets into `qacraft/bundle` during wheel builds.
+- Archive inspection for required skills, policies, schemas, rubrics, documentation, runtime modules, and build files.
+- Isolated wheel and source-distribution installation tests.
+- Installed-artifact smoke coverage for doctor, evaluation, release checks, and the Codex install/verify/uninstall lifecycle.
 
-### Distribution boundary
+### Safety
 
-- Editable installation is supported from a trusted checkout.
-- Complete wheel, source-distribution, and package-index asset bundling remains intentionally unclaimed until Phase 3.2 verifies every canonical skill, policy, schema, rubric, and example.
+- Distribution builds reject symbolic links and paths outside the repository.
+- Generated bundles are created only in temporary build directories and are not committed as duplicate source.
+- Cache files, bytecode, VCS metadata, virtual environments, build output, and egg metadata are excluded from bundles.
+- Incomplete installed artifacts fail with an explicit missing-assets report.
+- No package-index publication is claimed or performed.
 
 ## 1.1.0 — 2026-07-22
 
