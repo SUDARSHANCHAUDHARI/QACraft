@@ -20,6 +20,7 @@ from qacraft_installer import (
     verify_installation,
 )
 from qacraft_updater import apply_update_plan, build_update_plan
+from release_check import ReleaseCheckError, run_release_checks
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "catalog" / "skills.json"
@@ -282,6 +283,25 @@ def command_evaluate(args: argparse.Namespace) -> int:
     return 0 if report["passed"] else 1
 
 
+def command_release_check(args: argparse.Namespace) -> int:
+    try:
+        report = run_release_checks(ROOT)
+    except ReleaseCheckError as exc:
+        print(f"Release check failed: {exc}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        for item in report["checks"]:
+            marker = "PASS" if item["passed"] else "FAIL"
+            print(f"[{marker}] {item['id']}: {item['detail']}")
+        print(
+            f"Release {report['version']}: "
+            f"{report['summary']['passed_count']}/{report['summary']['check_count']} checks passed."
+        )
+    return 0 if report["passed"] else 1
+
+
 def add_agent_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--agent",
@@ -355,6 +375,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Rubric catalog JSON path",
     )
     item.set_defaults(func=command_evaluate)
+
+    item = sub.add_parser("release-check", help="Check production release readiness")
+    item.add_argument("--json", action="store_true", help="Emit JSON report")
+    item.set_defaults(func=command_release_check)
     return parser
 
 
