@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "fixtures": [
+    {
+      "path": "examples/feature-qa-pass.json",
+      "skill": "feature-qa",
+      "expected_pass": true
+    },
+    {
+      "path": "examples/test-plan-pass.json",
+      "skill": "test-plan",
+      "expected_pass": true
+    },
+    {
+      "path": "examples/regression-scope-pass.json",
+      "skill": "regression-scope",
+      "expected_pass": true
+    },
+    {
+      "path": "examples/customer-issue-repro-pass.json",
+      "skill": "customer-issue-repro",
+      "expected_pass": true
+    },
+    {
+      "path": "examples/api-qa-pass.json",
+      "skill": "api-qa",
+      "expected_pass": true
+    },
+    {
+      "path": "examples/staged-rollout-check-pass.json",
+      "skill": "staged-rollout-check",
+      "expected_pass": true
+    },
+    {
+      "path": "fixtures/test-plan-missing-output.json",
+      "skill": "test-plan",
+      "expected_pass": false,
+      "expected_failed_checks": [
+        "output_contract"
+      ]
+    },
+    {
+      "path": "fixtures/regression-scope-ungrounded-claim.json",
+      "skill": "regression-scope",
+      "expected_pass": false,
+      "expected_failed_checks": [
+        "source_grounding"
+      ]
+    },
+    {
+      "path": "fixtures/customer-issue-repro-missing-approval.json",
+      "skill": "customer-issue-repro",
+      "expected_pass": false,
+      "expected_failed_checks": [
+        "approval_gates"
+      ]
+    },
+    {
+      "path": "fixtures/api-qa-secret-output.json",
+      "skill": "api-qa",
+      "expected_pass": false,
+      "expected_failed_checks": [
+        "safety_boundaries"
+      ]
+    },
+    {
+      "path": "fixtures/staged-rollout-check-invalid-continue.json",
+      "skill": "staged-rollout-check",
+      "expected_pass": false,
+      "expected_failed_checks": [
+        "verdict_discipline"
+      ]
+    }
+  ]
+}
