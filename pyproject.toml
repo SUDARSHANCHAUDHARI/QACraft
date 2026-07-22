@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "qacraft"
 version = "1.1.0"
@@ -28,11 +32,17 @@ classifiers = [
   "Topic :: Software Development :: Testing"
 ]
 
+[project.scripts]
+qacraft = "qacraft:main"
+
 [project.urls]
 Homepage = "https://github.com/SUDARSHANCHAUDHARI/QACraft"
 Repository = "https://github.com/SUDARSHANCHAUDHARI/QACraft"
 Issues = "https://github.com/SUDARSHANCHAUDHARI/QACraft/issues"
 Documentation = "https://github.com/SUDARSHANCHAUDHARI/QACraft/tree/main/docs"
+
+[tool.setuptools]
+packages = ["qacraft"]
 
 [tool.qacraft]
 catalog = "catalog/skills.json"
@@ -40,3 +50,4 @@ docs = "docs/index.html"
 validator = "scripts/validate_repo.py"
 evaluations = "evaluations/rubrics.json"
 release_check = "scripts/release_check.py"
+distribution_mode = "editable-source"
