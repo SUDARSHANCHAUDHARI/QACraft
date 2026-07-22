@@ -33,12 +33,14 @@ The original `python3 scripts/qacraft.py ...` interface remains supported.
 
 ## Build verified artifacts
 
-Build a source distribution and wheel into `dist/`:
+Use the standard build frontend:
 
 ```bash
-python3 setup.py sdist --dist-dir dist
-python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .
+python3 -m pip install build
+python3 -m build --sdist --wheel --outdir dist
 ```
+
+The test suite uses a dedicated build environment with `build`, setuptools, and wheel installed once. Compatibility commands such as `python3 setup.py sdist --dist-dir dist` and `python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .` also remain available when those build tools are already installed.
 
 Install the built wheel locally:
 
