@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qacraft.dev/schemas/evaluation-result.schema.json",
+  "title": "QACraft evaluation result",
+  "type": "object",
+  "required": ["schema_version", "skill", "rubric_version", "candidate_sha256", "verdict", "score", "max_score", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "skill": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "rubric_version": {"type": "string"},
+    "candidate_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "verdict": {"enum": ["PASS", "FAIL"]},
+    "score": {"type": "integer", "minimum": 0},
+    "max_score": {"type": "integer", "minimum": 1},
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "passed", "weight", "message"],
+        "properties": {
+          "id": {"type": "string"},
+          "category": {"enum": ["hallucination", "approval-gates", "evidence", "verdict", "safety", "schema"]},
+          "passed": {"type": "boolean"},
+          "weight": {"type": "integer", "minimum": 1},
+          "message": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
