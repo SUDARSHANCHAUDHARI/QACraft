@@ -50,7 +50,26 @@ jobs:
         run: python3 scripts/validate_repo.py
 
       - name: Run tests
-        run: python3 -m unittest discover -s tests -v
+        shell: bash
+        run: |
+          set +e
+          python3 -m unittest discover -s tests -v > "$RUNNER_TEMP/qacraft-tests.log" 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            tail -n 160 "$RUNNER_TEMP/qacraft-tests.log" > "$RUNNER_TEMP/qacraft-test-failure.log"
+            cat "$RUNNER_TEMP/qacraft-test-failure.log"
+            exit "$status"
+          fi
+          tail -n 20 "$RUNNER_TEMP/qacraft-tests.log"
+
+      - name: Upload test failure diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qacraft-test-failure
+          path: ${{ runner.temp }}/qacraft-test-failure.log
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Check generated files are committed
         run: git diff --exit-code
