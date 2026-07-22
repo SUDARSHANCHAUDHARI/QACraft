@@ -42,7 +42,7 @@ class QACraftReleaseCheckTests(unittest.TestCase):
     def test_release_check_passes_for_repository(self):
         report = run_release_checks(ROOT)
         self.assertTrue(report["passed"], report)
-        self.assertEqual(report["version"], "1.3.0")
+        self.assertEqual(report["version"], "1.4.0")
         self.assertEqual(report["summary"]["failed_checks"], [])
 
     def test_release_check_cli_emits_json(self):
@@ -50,7 +50,7 @@ class QACraftReleaseCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         report = json.loads(result.stdout)
         self.assertTrue(report["passed"])
-        self.assertEqual(report["version"], "1.3.0")
+        self.assertEqual(report["version"], "1.4.0")
 
     def test_release_check_detects_missing_release_file(self):
         with tempfile.TemporaryDirectory() as parent:
@@ -65,11 +65,44 @@ class QACraftReleaseCheckTests(unittest.TestCase):
             repository = self.copy_repository(parent)
             rubric_path = repository / "evaluations" / "rubrics.json"
             rubrics = json.loads(rubric_path.read_text(encoding="utf-8"))
-            rubrics["skills"]["feature-qa"]["required_outputs"].pop()
+            rubrics["skills"]["test-plan"]["required_outputs"].pop()
             rubric_path.write_text(json.dumps(rubrics, indent=2) + "\n", encoding="utf-8")
             report = run_release_checks(repository)
             self.assertFalse(report["passed"])
             self.assertIn("rubric_skill_binding", report["summary"]["failed_checks"])
+
+    def test_release_check_detects_fixture_expectation_drift(self):
+        with tempfile.TemporaryDirectory() as parent:
+            repository = self.copy_repository(parent)
+            fixture_path = repository / "evaluations" / "fixtures.json"
+            fixtures = json.loads(fixture_path.read_text(encoding="utf-8"))
+            target = next(
+                item
+                for item in fixtures["fixtures"]
+                if item["path"] == "fixtures/api-qa-secret-output.json"
+            )
+            target["expected_pass"] = True
+            target.pop("expected_failed_checks")
+            fixture_path.write_text(
+                json.dumps(fixtures, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            report = run_release_checks(repository)
+            self.assertFalse(report["passed"])
+            self.assertIn("published_fixtures", report["summary"]["failed_checks"])
+
+    def test_release_check_detects_missing_fixture_file(self):
+        with tempfile.TemporaryDirectory() as parent:
+            repository = self.copy_repository(parent)
+            (
+                repository
+                / "evaluations"
+                / "examples"
+                / "staged-rollout-check-pass.json"
+            ).unlink()
+            report = run_release_checks(repository)
+            self.assertFalse(report["passed"])
+            self.assertIn("published_fixtures", report["summary"]["failed_checks"])
 
     def test_release_check_detects_expanded_ci_matrix(self):
         with tempfile.TemporaryDirectory() as parent:

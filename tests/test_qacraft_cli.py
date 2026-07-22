@@ -35,9 +35,23 @@ class QACraftCliTests(unittest.TestCase):
             result.stdout,
         )
         self.assertIn(
-            "Verified Codex and Claude Code adapters: available",
+            "Verified project adapters: 5 product adapters plus generic export",
             result.stdout,
         )
+        self.assertIn("Deterministic behavior rubrics: 10", result.stdout)
+
+    def test_cli_accepts_phase_three_skill_override(self):
+        result = self.run_cli(
+            "evaluate",
+            "--skill",
+            "api-qa",
+            "--input",
+            "evaluations/examples/api-qa-pass.json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertTrue(report["passed"])
+        self.assertEqual(report["skill"], "api-qa")
 
     def test_plan_install_is_preview_only_and_complete(self):
         with tempfile.TemporaryDirectory() as destination:

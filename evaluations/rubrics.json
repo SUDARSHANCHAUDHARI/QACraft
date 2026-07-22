@@ -189,6 +189,191 @@
         "sign-off.md",
         "release-report.html"
       ]
+    },
+    "test-plan": {
+      "required_gates": [
+        "Gate 1 · approve planning inputs",
+        "Gate 2 · approve plan",
+        "Gate 3 · publish plan"
+      ],
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED WITH GAPS",
+        "REVISION REQUIRED",
+        "BLOCKED",
+        "SUPERSEDED"
+      ],
+      "success_decisions": [
+        "APPROVED",
+        "APPROVED WITH GAPS"
+      ],
+      "success_requires_required_results_pass": false,
+      "decision_requirements": {
+        "APPROVED WITH GAPS": {
+          "accepted_risks": 1
+        }
+      },
+      "required_outputs": [
+        "plan-context.json",
+        "risk-register.yaml",
+        "coverage-matrix.csv",
+        "test-plan.md",
+        "scenario-catalog.yaml",
+        "data-plan.md",
+        "review-log.jsonl",
+        "test-plan.html"
+      ]
+    },
+    "regression-scope": {
+      "required_gates": [
+        "Gate 1 · approve change set",
+        "Gate 2 · approve scope",
+        "Gate 3 · publish scope"
+      ],
+      "allowed_decisions": [
+        "MINIMAL",
+        "TARGETED",
+        "BROAD",
+        "FULL",
+        "UNSCOPED"
+      ],
+      "success_decisions": [
+        "MINIMAL",
+        "TARGETED",
+        "BROAD",
+        "FULL"
+      ],
+      "success_requires_required_results_pass": false,
+      "decision_requirements": {},
+      "required_outputs": [
+        "scope-context.json",
+        "change-map.md",
+        "dependency-map.json",
+        "risk-register.yaml",
+        "regression-manifest.yaml",
+        "manual-scenarios.md",
+        "suite-commands.sh",
+        "exclusions.md",
+        "regression-scope.html"
+      ]
+    },
+    "customer-issue-repro": {
+      "required_gates": [
+        "Gate 1 · approve case boundary",
+        "Gate 2 · approve tests",
+        "Gate 3 · confirm response",
+        "Gate 4 · publish"
+      ],
+      "allowed_decisions": [
+        "REPRODUCED",
+        "PARTIALLY REPRODUCED",
+        "ENVIRONMENT-SPECIFIC",
+        "NOT REPRODUCED",
+        "INSUFFICIENT INFORMATION",
+        "THIRD-PARTY RELATED"
+      ],
+      "success_decisions": [
+        "REPRODUCED",
+        "PARTIALLY REPRODUCED",
+        "ENVIRONMENT-SPECIFIC",
+        "NOT REPRODUCED",
+        "THIRD-PARTY RELATED"
+      ],
+      "success_requires_required_results_pass": false,
+      "decision_requirements": {
+        "PARTIALLY REPRODUCED": {
+          "uncertainties": 1
+        },
+        "NOT REPRODUCED": {
+          "uncertainties": 1
+        }
+      },
+      "required_outputs": [
+        "case-context.json",
+        "consent-record.md",
+        "environment-matrix.yaml",
+        "failure-signature.md",
+        "reproduction-plan.md",
+        "attempt-ledger.jsonl",
+        "isolation-analysis.md",
+        "customer-response.md",
+        "internal-handoff.md",
+        "customer-repro-report.html"
+      ]
+    },
+    "api-qa": {
+      "required_gates": [
+        "Gate 1 · approve target",
+        "Gate 2 · approve execution",
+        "Gate 3 · confirm findings",
+        "Gate 4 · publish"
+      ],
+      "allowed_decisions": [
+        "INVALID TARGET",
+        "REJECT",
+        "BLOCKED",
+        "PASS WITH GAPS",
+        "PASS"
+      ],
+      "success_decisions": [
+        "PASS WITH GAPS",
+        "PASS"
+      ],
+      "success_requires_required_results_pass": true,
+      "decision_requirements": {
+        "PASS WITH GAPS": {
+          "accepted_risks": 1
+        }
+      },
+      "required_outputs": [
+        "api-context.json",
+        "contract-map.yaml",
+        "case-catalog.yaml",
+        "traffic-plan.md",
+        "attempt-ledger.jsonl",
+        "redacted-http/",
+        "state-evidence/",
+        "findings/",
+        "cleanup-report.md",
+        "api-report.html"
+      ]
+    },
+    "staged-rollout-check": {
+      "required_gates": [
+        "Gate 1 · approve stage",
+        "Gate 2 · approve stage action",
+        "Gate 3 · execute action"
+      ],
+      "allowed_decisions": [
+        "CONTINUE",
+        "HOLD",
+        "INVESTIGATE",
+        "ROLL BACK",
+        "INVALID DATA"
+      ],
+      "success_decisions": [
+        "CONTINUE"
+      ],
+      "success_requires_required_results_pass": true,
+      "decision_requirements": {
+        "HOLD": {
+          "uncertainties": 1
+        },
+        "INVESTIGATE": {
+          "uncertainties": 1
+        }
+      },
+      "required_outputs": [
+        "stage-context.json",
+        "threshold-policy.yaml",
+        "metric-snapshot.json",
+        "cohort-analysis.md",
+        "incident-review.md",
+        "stage-decision.json",
+        "action-record.json",
+        "rollback-verification.md",
+        "rollout-report.html"
+      ]
     }
   }
 }

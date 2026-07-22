@@ -2,6 +2,27 @@
 
 All notable QACraft changes are documented here.
 
+## 1.4.0 — 2026-07-22
+
+### Added
+
+- Deterministic rubrics for `/test-plan`, `/regression-scope`, `/customer-issue-repro`, `/api-qa`, and `/staged-rollout-check`.
+- Candidate-schema support for all ten evaluated skills.
+- Passing examples for every Phase 3.4 rubric.
+- Targeted negative fixtures for output contracts, source grounding, approval gates, safety boundaries, and verdict discipline.
+- `evaluations/fixtures.json` as the authoritative fixture expectation catalog.
+- Release validation for fixture existence, expected pass/fail outcomes, and declared failed checks.
+- Regression tests for conditional planning risk, customer uncertainty, rollout decisions, schema/rubric alignment, and installed-artifact fixture coverage.
+
+### Safety
+
+- Evaluation remains local, deterministic, read-only, dependency-free, and network-free.
+- Rubrics remain bound to canonical approval gates, decisions, and output contracts.
+- Planning and scoping decisions are not treated as proof of product execution success.
+- `NOT REPRODUCED` requires visible uncertainty instead of dismissing a customer report.
+- Rollout `CONTINUE` cannot hide required failed results.
+- Published negative fixtures contain synthetic data only.
+
 ## 1.3.0 — 2026-07-22
 
 ### Added

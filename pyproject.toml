@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qacraft"
-version = "1.3.0"
+version = "1.4.0"
 description = "Reusable QA skills with safe agent adapters and deterministic behavior evaluations"
 readme = "README.md"
 license = { text = "MIT" }

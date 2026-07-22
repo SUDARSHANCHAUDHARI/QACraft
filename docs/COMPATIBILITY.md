@@ -39,19 +39,26 @@ Incomplete checkouts or installed bundles fail with an explicit missing-assets r
 
 The destination passed to the CLI is always an explicit project or installation root. QACraft does not guess global directories or change agent configuration files.
 
-The three 1.3.0 adapters use their product-native project paths even where an agent also supports `.agents/skills` or `.claude/skills` aliases. This keeps ownership and uninstall behavior explicit. Do not install the same skill name through multiple adapters in one project unless the target agents' precedence behavior has been reviewed.
+The product adapters use their native project paths even where compatible aliases also exist. This keeps ownership and uninstall behavior explicit. Do not install the same skill name through multiple adapters unless the target agents' precedence behavior has been reviewed.
 
-Cursor and Windsurf are not listed as verified Agent Skills adapters because this release does not rely on undocumented discovery paths. Their instruction-file features are outside this adapter contract.
+Cursor and Windsurf are not listed as verified Agent Skills adapters because QACraft does not rely on undocumented discovery paths. Their instruction-file features are outside this adapter contract.
 
 ## Behavior evaluations
 
-Deterministic rubrics are included for:
+Deterministic rubrics are included for ten workflows:
 
 - `/feature-qa`
 - `/ticket-review`
 - `/bug-report`
 - `/verify-fix`
 - `/release-qa`
+- `/test-plan`
+- `/regression-scope`
+- `/customer-issue-repro`
+- `/api-qa`
+- `/staged-rollout-check`
+
+Passing examples and targeted failure fixtures are declared in `evaluations/fixtures.json`. The catalog and all referenced files are included in the wheel and source distribution.
 
 The evaluator checks structured candidate reports for schema conformance, grounding, approvals, evidence, verdict discipline, safety declarations, and output contracts. It does not call an AI model and does not authenticate evidence against external systems.
 
@@ -67,6 +74,8 @@ The evaluator checks structured candidate reports for schema conformance, ground
 - Agent copies receive deterministic standards-compatible frontmatter normalization.
 - Failed installs and updates roll back QACraft-managed changes.
 - All entry points delegate to the same reviewed runtime.
+- Rubric gates, decisions, and outputs are release-bound to canonical skill contracts.
+- Published fixture expectations are checked from source and installed artifacts.
 
 ## Intentionally unsupported
 

@@ -1,6 +1,6 @@
 # QACraft production readiness
 
-QACraft 1.3.0 is production-ready as a **source-controlled skill distribution, locally buildable package, verified multi-agent adapter set, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, evidence-authenticity service, or published package-index release.
+QACraft 1.4.0 is production-ready as a **source-controlled skill distribution, locally buildable package, verified multi-agent adapter set, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, evidence-authenticity service, or published package-index release.
 
 ## Supported production use
 
@@ -14,7 +14,8 @@ QACraft 1.3.0 is production-ready as a **source-controlled skill distribution, l
 - verify installed files against checksummed manifests;
 - update an installed skill set with conflict detection and rollback;
 - uninstall only unchanged manifest-owned files;
-- evaluate structured reports for five priority QA skills with deterministic policy checks;
+- evaluate structured reports for ten priority QA skills with deterministic policy checks;
+- validate published passing and targeted failure fixtures from source and installed artifacts;
 - regenerate and validate static documentation.
 
 ## Verified adapter acceptance
@@ -29,6 +30,21 @@ An agent adapter is added only when its project-level `SKILL.md` discovery path 
 - no automatic global installation or product configuration modification.
 
 The verified native roots are `.agents/skills`, `.claude/skills`, `.github/skills`, `.gemini/skills`, and `.opencode/skills`. Cursor and Windsurf are excluded from the verified adapter set until equivalent official Agent Skills discovery paths are available.
+
+## Evaluation acceptance
+
+A deterministic rubric is releasable only when:
+
+- every approval gate exactly matches the canonical skill;
+- allowed decisions come from the canonical result states or ordered decision policy;
+- required outputs exactly match the canonical output contract;
+- success and conditional-decision rules are explicit;
+- the candidate schema includes the skill;
+- a published passing example is available for the expansion slice;
+- a targeted negative fixture fails the intended policy check;
+- release checks verify the fixture catalog without network access.
+
+The Phase 3.4 expansion covers `/test-plan`, `/regression-scope`, `/customer-issue-repro`, `/api-qa`, and `/staged-rollout-check`.
 
 ## Release acceptance criteria
 
@@ -52,6 +68,7 @@ The unit suite builds and validates both distribution artifacts. The pull-reques
 - incomplete installed bundles produce an explicit missing-assets error;
 - wheel and source-distribution archives are inspected before acceptance;
 - each artifact is installed and lifecycle-tested in an isolated environment;
+- published fixture expectations are checked by the installed release command;
 - no package-index upload occurs automatically.
 
 ## Filesystem lifecycle safety
@@ -79,7 +96,10 @@ The unit suite builds and validates both distribution artifacts. The pull-reques
 - success outcomes are blocked by required non-pass results or open release blockers;
 - conditional outcomes require recorded risk, assumption, or uncertainty;
 - external-write declarations require approval and idempotency;
-- output paths must remain safe and output contracts complete.
+- output paths must remain safe and output contracts complete;
+- planning and scoping decisions are not misrepresented as executed product passes;
+- `NOT REPRODUCED` does not invalidate a customer report;
+- rollout `CONTINUE` cannot hide a required failed result.
 
 ## Operational boundaries
 
@@ -104,7 +124,7 @@ Adopters must provide the runtime sandbox, identity, authorisation, evidence sto
 - editable, local wheel, and local source-distribution installation are supported.
 - no PyPI/package-index publication is claimed.
 - five product-native project adapters are explicitly mapped; user-global paths remain unsupported.
-- five skills have deterministic behavior rubrics; all 25 skills remain installable.
+- ten skills have deterministic behavior rubrics; all 25 skills remain installable.
 
 See `docs/COMPATIBILITY.md` for the complete matrix.
 
@@ -121,4 +141,4 @@ The repository intentionally uses:
 
 ## Release decision
 
-A release must not be tagged or published when `qacraft release-check` reports any failed check, adapter lifecycle tests fail, artifact tests fail, the pull-request validation job is unsuccessful, the demo fails, or generated documentation differs from committed files.
+A release must not be tagged or published when `qacraft release-check` reports any failed check, adapter lifecycle tests fail, evaluation fixtures drift from their declared result, artifact tests fail, the pull-request validation job is unsuccessful, the demo fails, or generated documentation differs from committed files.

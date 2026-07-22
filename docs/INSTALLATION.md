@@ -1,6 +1,6 @@
 # QACraft installation and lifecycle guide
 
-QACraft 1.3.0 has no third-party runtime dependencies and requires Python 3.10 or newer.
+QACraft 1.4.0 has no third-party runtime dependencies and requires Python 3.10 or newer.
 
 ## Editable installation from a checkout
 
@@ -31,14 +31,14 @@ The source distribution contains the canonical source tree, tests, manifest, and
 Install a local wheel:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.3.0-py3-none-any.whl
+python3 -m pip install --no-deps dist/qacraft-1.4.0-py3-none-any.whl
 qacraft doctor
 ```
 
 Install a local source distribution:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.3.0.tar.gz
+python3 -m pip install --no-deps dist/qacraft-1.4.0.tar.gz
 qacraft doctor
 ```
 
@@ -78,24 +78,20 @@ The destination is the target project root. Preview is the default:
 
 ```bash
 qacraft install feature-qa bug-report \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project
 ```
 
-Apply the reviewed plan:
+Apply only after reviewing the plan:
 
 ```bash
 qacraft install feature-qa bug-report \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project \
   --apply
 ```
 
-Replace `gemini-cli` with any verified CLI value in the table. Installed `SKILL.md` files receive deterministic Agent Skills frontmatter while preserving the complete canonical instruction body.
-
 ## Generic installation
-
-Use the generic adapter only when another integration will load the exported files itself:
 
 ```bash
 qacraft install feature-qa \
@@ -108,7 +104,7 @@ qacraft install feature-qa \
 
 ```bash
 qacraft verify-install \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project
 ```
 
@@ -116,15 +112,13 @@ A healthy installation returns exit code `0`. Missing or modified managed files 
 
 ## Update the installed skill set
 
-The supplied skills represent the desired final set:
-
 ```bash
 qacraft update feature-qa bug-report release-qa \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project
 
 qacraft update feature-qa bug-report release-qa \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project \
   --apply
 ```
@@ -135,29 +129,25 @@ QACraft refuses to update modified managed files or overwrite unrelated files. F
 
 ```bash
 qacraft uninstall \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project
 
 qacraft uninstall \
-  --agent gemini-cli \
+  --agent github-copilot \
   --destination /path/to/project \
   --apply
 ```
 
-Only unchanged files recorded in the selected adapter manifest are removed. Unrelated project files, other adapters, and non-empty directories are preserved.
-
-## Adapter coexistence
-
-Every verified adapter owns a separate manifest and shared-policy directory. Different adapters may coexist in one repository and can be verified, updated, or uninstalled independently.
-
-Avoid installing the same skill slug through multiple adapters unless you have reviewed how the target agents resolve duplicate skill names across native and alias paths.
+Only unchanged files recorded in the selected adapter manifest are removed. Unrelated project files and directories are preserved.
 
 ## Evaluate a candidate QA report
 
 ```bash
 qacraft eval-list
-qacraft evaluate --input /path/to/candidate.json
+qacraft evaluate --input evaluations/examples/api-qa-pass.json
 ```
+
+Published examples and negative cases are indexed by `evaluations/fixtures.json`. Negative fixtures intentionally return exit code `1` and are used to prove specific policy checks.
 
 Evaluation exit codes:
 
@@ -173,8 +163,9 @@ The test suite:
 2. inspects both archives for required and forbidden files;
 3. installs each artifact into a separate environment;
 4. runs `doctor`, `eval-list`, `evaluate`, and `release-check`;
-5. performs lifecycle verification for agent adapters;
-6. confirms unrelated project content remains intact.
+5. performs an agent install, verification, and uninstall lifecycle;
+6. verifies all declared evaluation fixtures through the installed release check;
+7. confirms unrelated project content remains intact.
 
 ## Operational boundaries
 

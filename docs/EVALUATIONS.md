@@ -4,11 +4,21 @@ QACraft includes a local, deterministic evaluator for structured QA candidate re
 
 ## Covered skills
 
+### Core release and defect workflows
+
 - `/feature-qa`
 - `/ticket-review`
 - `/bug-report`
 - `/verify-fix`
 - `/release-qa`
+
+### Phase 3.4 expansion
+
+- `/test-plan`
+- `/regression-scope`
+- `/customer-issue-repro`
+- `/api-qa`
+- `/staged-rollout-check`
 
 The skill-specific rules are stored in `evaluations/rubrics.json` and are derived from each canonical skill's approval gates, ordered decision policy, result states, and output contract.
 
@@ -42,32 +52,77 @@ The complete schema is `schemas/evaluation-candidate.schema.json`. A candidate i
 - the produced output list,
 - cleanup status and residual resources.
 
-A passing example is available at `evaluations/examples/feature-qa-pass.json`.
+The candidate schema skill enumeration is kept equal to the rubric catalog.
+
+## Published fixture catalog
+
+`evaluations/fixtures.json` is the authoritative list of published examples and targeted failures.
+
+The catalog records:
+
+- fixture path,
+- selected skill,
+- whether the evaluation must pass,
+- the policy check or checks a negative fixture must fail.
+
+Passing examples are provided for the original `/feature-qa` rubric and all five Phase 3.4 skills. Targeted negative fixtures cover:
+
+| Skill | Targeted failure |
+|---|---|
+| `/test-plan` | missing required output |
+| `/regression-scope` | observed claim without evidence |
+| `/customer-issue-repro` | missing required approval |
+| `/api-qa` | secrets declared in output |
+| `/staged-rollout-check` | `CONTINUE` with a required failed result |
+
+`qacraft release-check` evaluates every catalog entry. It fails when a fixture is missing, produces the wrong pass/fail result, or does not trigger its declared failed check.
 
 ## Commands
 
 List available rubrics:
 
 ```bash
-python3 scripts/qacraft.py eval-list
+qacraft eval-list
 ```
 
-Evaluate a candidate:
+Evaluate a passing example:
 
 ```bash
-python3 scripts/qacraft.py evaluate \
-  --input evaluations/examples/feature-qa-pass.json
+qacraft evaluate \
+  --input evaluations/examples/api-qa-pass.json
 ```
+
+Evaluate a targeted failure fixture:
+
+```bash
+qacraft evaluate \
+  --input evaluations/fixtures/api-qa-secret-output.json
+```
+
+The second command is expected to return exit code `1` and include `safety_boundaries` in the failed checks.
 
 Override the skill only when the caller intentionally wants to validate that the candidate matches a specific rubric:
 
 ```bash
-python3 scripts/qacraft.py evaluate \
-  --skill feature-qa \
+qacraft evaluate \
+  --skill api-qa \
   --input candidate.json
 ```
 
 The report is emitted as JSON on standard output and follows `schemas/evaluation-report.schema.json`.
+
+## Rubric design rules
+
+Every rubric must:
+
+- copy approval-gate text exactly from the canonical `SKILL.md`,
+- use only decisions present in the canonical result states or ordered decision policy,
+- copy the output contract exactly,
+- identify which outcomes are treated as successful by the generic evaluator,
+- declare additional safety records required for conditional outcomes,
+- remain deterministic and network-free.
+
+Planning and scoping outcomes such as `APPROVED`, `TARGETED`, and `BROAD` are workflow decisions, not proof that the product passed execution. Customer reproduction outcomes such as `NOT REPRODUCED` are also not a dismissal of the report.
 
 ## Scope and limitations
 
