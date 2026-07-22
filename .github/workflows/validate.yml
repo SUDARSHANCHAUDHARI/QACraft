@@ -8,6 +8,7 @@ on:
       - "catalog/**"
       - "docs/**"
       - "evaluations/**"
+      - "qacraft/**"
       - "schemas/**"
       - "shared/**"
       - "skills/**"
