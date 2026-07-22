@@ -29,6 +29,7 @@ def build_update_plan(
 ) -> dict:
     root = root.resolve(strict=True)
     destination, manifest = load_manifest(destination)
+    manifest_path = destination / MANIFEST_NAME
     verification = verify_installation(destination)
     blocked = [item["path"] for item in verification["files"] if item["status"] != "ok"]
     if blocked:
@@ -119,7 +120,8 @@ def build_update_plan(
     return {
         "mode": "preview-only",
         "destination": destination.as_posix(),
-        "manifest": (destination / MANIFEST_NAME).as_posix(),
+        "manifest": manifest_path.as_posix(),
+        "manifest_sha256": sha256_file(manifest_path),
         "operations": operations,
         "conflicts": conflicts,
         "blocked": [],
@@ -137,6 +139,8 @@ def apply_update_plan(plan: dict) -> dict:
     destination = resolve_destination(Path(plan["destination"]))
     manifest_path = destination / MANIFEST_NAME
     if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise InstallError("Manifest changed after preview.")
+    if sha256_file(manifest_path) != plan.get("manifest_sha256"):
         raise InstallError("Manifest changed after preview.")
 
     current_manifest_bytes = manifest_path.read_bytes()
@@ -162,9 +166,9 @@ def apply_update_plan(plan: dict) -> dict:
                     raise InstallError(f"Destination changed after preview: {target}")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(Path(item["source"]), target)
+                created.append(target)
                 if sha256_file(target) != item["sha256"]:
                     raise InstallError(f"Checksum verification failed: {target}")
-                created.append(target)
             elif operation == "replace":
                 shutil.copyfile(Path(item["source"]), target)
                 if sha256_file(target) != item["sha256"]:
