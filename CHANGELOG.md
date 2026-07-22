@@ -12,7 +12,8 @@ All notable QACraft changes are documented here.
 - Versioned manifests, SHA-256 verification, conflict protection, rollback, and safe cleanup.
 - Deterministic behavior evaluation for `/feature-qa`, `/ticket-review`, `/bug-report`, `/verify-fix`, and `/release-qa`.
 - Candidate and evaluation-report schemas, versioned rubrics, example reports, and regression tests.
-- Production installation, compatibility, demo, and release documentation.
+- Deterministic `release-check` covering release files, metadata, lean CI, rubric coverage, rubric-to-skill binding, and the published example.
+- Production installation, compatibility, production-readiness, demo, and release documentation.
 
 ### Safety
 
@@ -21,6 +22,7 @@ All notable QACraft changes are documented here.
 - No network, customer, production, or external-system access from the installer or evaluator.
 - Agent adapters use independent manifests and preserve unrelated project files.
 - Evaluations inspect supplied structured reports; they do not prove evidence authenticity or enforce runtime permissions.
+- Release validation fails when behavior rubrics drift from canonical skill gates, decisions, or output contracts.
 
 ## 1.0.0 — 2026-07-21
 
