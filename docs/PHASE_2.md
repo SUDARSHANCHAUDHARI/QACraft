@@ -40,6 +40,8 @@ Completed capabilities:
 
 The explicit destination is always the project or installation root. QACraft does not guess user-global paths, detect agents automatically, or modify agent configuration files.
 
+Canonical QACraft files remain unchanged. Codex and Claude Code installed copies normalize `command`, `version`, and `status` into the standard Agent Skills `metadata` mapping while preserving the complete Markdown instruction body. The manifest records both canonical-source and installed-output checksums.
+
 ## Commands
 
 List available skills:
@@ -107,6 +109,7 @@ Replace `codex` with `claude-code` or `generic` as required.
 
 - Preview is the default for install, update, and uninstall.
 - Existing or unowned target files are conflicts.
+- Canonical sources and rendered outputs are checksum-bound to the preview.
 - Managed files must still match their manifest checksums before update or uninstall.
 - Manifests and files are rechecked immediately before mutation.
 - Failed installs and updates roll back their managed changes.
