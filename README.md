@@ -28,6 +28,8 @@ qacraft release-check
 python3 scripts/demo.py
 ```
 
+Pip may create an isolated build environment to obtain the declared setuptools build backend. QACraft itself still installs with zero runtime dependencies because `--no-deps` is used.
+
 The editable installation keeps this checkout as the canonical source of skills, shared policies, schemas, rubrics, examples, and release files. It lets `qacraft` run from any current directory while preserving the reviewed source tree.
 
 Phase 3.1 does not claim complete wheel or PyPI distribution. Until bundled asset verification is delivered, use `pip install -e .` rather than `pip install .` or a package index. The original `python3 scripts/qacraft.py ...` interface remains supported.
