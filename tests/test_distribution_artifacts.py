@@ -82,7 +82,6 @@ class QACraftDistributionArtifactTests(unittest.TestCase):
                 "pip",
                 "wheel",
                 "--no-deps",
-                "--no-build-isolation",
                 "--wheel-dir",
                 str(cls.dist),
                 str(cls.source),
@@ -187,7 +186,7 @@ class QACraftDistributionArtifactTests(unittest.TestCase):
         unrelated = project / "keep-me.txt"
         unrelated.write_text("unrelated\n", encoding="utf-8")
 
-        venv.EnvBuilder(with_pip=True, system_site_packages=True).create(environment)
+        venv.EnvBuilder(with_pip=True).create(environment)
         python = self.environment_python(environment)
         console = self.environment_console(environment)
         self.run_command(
@@ -197,7 +196,6 @@ class QACraftDistributionArtifactTests(unittest.TestCase):
                 "pip",
                 "install",
                 "--no-deps",
-                "--no-build-isolation",
                 str(artifact),
             ],
             cwd=outside,
