@@ -1,19 +1,6 @@
 name: Validate QACraft
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "catalog/**"
-      - "docs/**"
-      - "schemas/**"
-      - "shared/**"
-      - "skills/**"
-      - "scripts/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - ".github/workflows/validate.yml"
   pull_request:
     branches:
       - main
