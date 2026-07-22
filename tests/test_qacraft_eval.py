@@ -8,6 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "qacraft.py"
 RUBRICS = ROOT / "evaluations" / "rubrics.json"
+FIXTURES = ROOT / "evaluations" / "fixtures.json"
+CANDIDATE_SCHEMA = ROOT / "schemas" / "evaluation-candidate.schema.json"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from qacraft_eval import evaluate_candidate, evaluate_file, load_rubrics  # noqa: E402
@@ -19,6 +21,11 @@ SUCCESS_OUTCOMES = {
     "bug-report": "CONFIRMED DEFECT",
     "verify-fix": "FIXED",
     "release-qa": "PASS",
+    "test-plan": "APPROVED",
+    "regression-scope": "TARGETED",
+    "customer-issue-repro": "ENVIRONMENT-SPECIFIC",
+    "api-qa": "PASS",
+    "staged-rollout-check": "CONTINUE",
 }
 
 
@@ -113,15 +120,13 @@ class QACraftEvaluationTests(unittest.TestCase):
         )
 
     def test_rubric_catalog_covers_priority_skills(self):
+        self.assertEqual(set(self.rubrics), set(SUCCESS_OUTCOMES))
+
+    def test_candidate_schema_skill_enum_matches_rubrics(self):
+        schema = json.loads(CANDIDATE_SCHEMA.read_text(encoding="utf-8"))
         self.assertEqual(
+            set(schema["properties"]["skill"]["enum"]),
             set(self.rubrics),
-            {
-                "feature-qa",
-                "ticket-review",
-                "bug-report",
-                "verify-fix",
-                "release-qa",
-            },
         )
 
     def test_valid_candidates_pass_every_rubric(self):
@@ -132,6 +137,24 @@ class QACraftEvaluationTests(unittest.TestCase):
                 self.assertEqual(report["score"], report["max_score"])
                 self.assertEqual(report["summary"]["failed_checks"], [])
 
+    def test_published_fixture_catalog_matches_expectations(self):
+        catalog = json.loads(FIXTURES.read_text(encoding="utf-8"))
+        self.assertEqual(catalog["schema_version"], "1.0.0")
+        self.assertGreaterEqual(len(catalog["fixtures"]), 11)
+
+        for fixture in catalog["fixtures"]:
+            with self.subTest(path=fixture["path"]):
+                path = ROOT / "evaluations" / fixture["path"]
+                report = evaluate_file(path, RUBRICS, skill=fixture["skill"])
+                self.assertEqual(report["passed"], fixture["expected_pass"], report)
+                if not fixture["expected_pass"]:
+                    self.assertTrue(
+                        set(fixture["expected_failed_checks"]).issubset(
+                            report["summary"]["failed_checks"]
+                        ),
+                        report,
+                    )
+
     def test_hallucination_control_requires_evidence_for_observed_claims(self):
         rubric = self.rubrics["feature-qa"]
         candidate = valid_candidate("feature-qa", rubric)
@@ -141,10 +164,10 @@ class QACraftEvaluationTests(unittest.TestCase):
         self.assertIn("source_grounding", report["summary"]["failed_checks"])
 
     def test_approval_gate_check_detects_missing_gate(self):
-        rubric = self.rubrics["release-qa"]
-        candidate = valid_candidate("release-qa", rubric)
+        rubric = self.rubrics["customer-issue-repro"]
+        candidate = valid_candidate("customer-issue-repro", rubric)
         candidate["approvals"].pop()
-        report = evaluate_candidate(candidate, rubric, "release-qa")
+        report = evaluate_candidate(candidate, rubric, "customer-issue-repro")
         self.assertIn("approval_gates", report["summary"]["failed_checks"])
 
     def test_evidence_check_detects_unproven_result(self):
@@ -155,10 +178,10 @@ class QACraftEvaluationTests(unittest.TestCase):
         self.assertIn("evidence_quality", report["summary"]["failed_checks"])
 
     def test_verdict_check_rejects_pass_with_required_failure(self):
-        rubric = self.rubrics["feature-qa"]
-        candidate = valid_candidate("feature-qa", rubric)
+        rubric = self.rubrics["api-qa"]
+        candidate = valid_candidate("api-qa", rubric)
         candidate["results"][0]["status"] = "FAIL"
-        report = evaluate_candidate(candidate, rubric, "feature-qa")
+        report = evaluate_candidate(candidate, rubric, "api-qa")
         self.assertIn("verdict_discipline", report["summary"]["failed_checks"])
 
     def test_verdict_check_requires_recorded_conditional_risk(self):
@@ -174,6 +197,39 @@ class QACraftEvaluationTests(unittest.TestCase):
         report = evaluate_candidate(candidate, rubric, "release-qa")
         self.assertTrue(report["passed"], report)
 
+    def test_test_plan_gap_decision_requires_recorded_risk(self):
+        rubric = self.rubrics["test-plan"]
+        candidate = valid_candidate("test-plan", rubric)
+        candidate["decision"]["outcome"] = "APPROVED WITH GAPS"
+        report = evaluate_candidate(candidate, rubric, "test-plan")
+        self.assertIn("verdict_discipline", report["summary"]["failed_checks"])
+
+        candidate["safety"]["accepted_risks"] = [
+            "Safari coverage is deferred with owner and expiry."
+        ]
+        report = evaluate_candidate(candidate, rubric, "test-plan")
+        self.assertTrue(report["passed"], report)
+
+    def test_customer_not_reproduced_requires_uncertainty(self):
+        rubric = self.rubrics["customer-issue-repro"]
+        candidate = valid_candidate("customer-issue-repro", rubric)
+        candidate["decision"]["outcome"] = "NOT REPRODUCED"
+        report = evaluate_candidate(candidate, rubric, "customer-issue-repro")
+        self.assertIn("verdict_discipline", report["summary"]["failed_checks"])
+
+        candidate["safety"]["uncertainties"] = [
+            "The customer proxy configuration was unavailable in the laboratory."
+        ]
+        report = evaluate_candidate(candidate, rubric, "customer-issue-repro")
+        self.assertTrue(report["passed"], report)
+
+    def test_rollout_continue_rejects_required_failure(self):
+        rubric = self.rubrics["staged-rollout-check"]
+        candidate = valid_candidate("staged-rollout-check", rubric)
+        candidate["results"][0]["status"] = "FAIL"
+        report = evaluate_candidate(candidate, rubric, "staged-rollout-check")
+        self.assertIn("verdict_discipline", report["summary"]["failed_checks"])
+
     def test_approval_check_rejects_expired_approval(self):
         rubric = self.rubrics["release-qa"]
         candidate = valid_candidate("release-qa", rubric)
@@ -182,10 +238,10 @@ class QACraftEvaluationTests(unittest.TestCase):
         self.assertIn("approval_gates", report["summary"]["failed_checks"])
 
     def test_grounding_rejects_evidence_captured_after_report(self):
-        rubric = self.rubrics["feature-qa"]
-        candidate = valid_candidate("feature-qa", rubric)
+        rubric = self.rubrics["regression-scope"]
+        candidate = valid_candidate("regression-scope", rubric)
         candidate["evidence"][0]["captured_at"] = "2026-07-22T13:00:00Z"
-        report = evaluate_candidate(candidate, rubric, "feature-qa")
+        report = evaluate_candidate(candidate, rubric, "regression-scope")
         self.assertIn("source_grounding", report["summary"]["failed_checks"])
 
     def test_safety_check_rejects_unapproved_external_write(self):
@@ -202,10 +258,10 @@ class QACraftEvaluationTests(unittest.TestCase):
         self.assertIn("safety_boundaries", report["summary"]["failed_checks"])
 
     def test_output_contract_detects_missing_required_output(self):
-        rubric = self.rubrics["ticket-review"]
-        candidate = valid_candidate("ticket-review", rubric)
+        rubric = self.rubrics["test-plan"]
+        candidate = valid_candidate("test-plan", rubric)
         candidate["outputs"].pop()
-        report = evaluate_candidate(candidate, rubric, "ticket-review")
+        report = evaluate_candidate(candidate, rubric, "test-plan")
         self.assertIn("output_contract", report["summary"]["failed_checks"])
 
     def test_schema_check_rejects_unsafe_output_path(self):
@@ -217,8 +273,8 @@ class QACraftEvaluationTests(unittest.TestCase):
         self.assertEqual(report["score"], 0)
 
     def test_evaluate_file_and_cli_return_machine_readable_report(self):
-        rubric = self.rubrics["feature-qa"]
-        candidate = valid_candidate("feature-qa", rubric)
+        rubric = self.rubrics["api-qa"]
+        candidate = valid_candidate("api-qa", rubric)
         with tempfile.TemporaryDirectory() as directory:
             candidate_path = Path(directory) / "candidate.json"
             candidate_path.write_text(json.dumps(candidate), encoding="utf-8")
@@ -230,11 +286,11 @@ class QACraftEvaluationTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(result.stdout)
             self.assertTrue(report["passed"])
-            self.assertEqual(report["skill"], "feature-qa")
+            self.assertEqual(report["skill"], "api-qa")
 
     def test_cli_returns_one_for_failed_evaluation(self):
-        rubric = self.rubrics["feature-qa"]
-        candidate = valid_candidate("feature-qa", rubric)
+        rubric = self.rubrics["staged-rollout-check"]
+        candidate = valid_candidate("staged-rollout-check", rubric)
         candidate["results"][0]["status"] = "BLOCKED"
         with tempfile.TemporaryDirectory() as directory:
             candidate_path = Path(directory) / "candidate.json"
