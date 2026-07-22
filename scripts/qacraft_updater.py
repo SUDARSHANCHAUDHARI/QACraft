@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,9 +16,11 @@ from qacraft_installer import (
     reject_symlinked_target_path,
     resolve_destination,
     safe_relative_path,
+    sha256_bytes,
     sha256_file,
     verify_installation,
 )
+from qacraft_transforms import normalise_transform, render_source_bytes
 
 
 def build_update_plan(
@@ -61,16 +62,19 @@ def build_update_plan(
     current = {str(item["path"]): item for item in manifest["files"]}
     desired: dict[str, dict] = {}
 
-    for source_relative, target_relative in normalise_file_specs(file_specs):
+    for source_relative, target_relative, transform in normalise_file_specs(file_specs):
         source = (root / source_relative).resolve(strict=True)
         try:
             source.relative_to(root)
         except ValueError as exc:
             raise InstallError(f"Source escapes repository root: {source_relative}") from exc
+        rendered = render_source_bytes(source, transform)
         desired[target_relative.as_posix()] = {
             "source": source,
             "source_path": source_relative.as_posix(),
-            "sha256": sha256_file(source),
+            "transform": transform,
+            "source_sha256": sha256_file(source),
+            "sha256": sha256_bytes(rendered),
         }
 
     operations: list[dict] = []
@@ -88,6 +92,8 @@ def build_update_plan(
                         "path": path,
                         "source": item["source"].as_posix(),
                         "source_path": item["source_path"],
+                        "transform": item["transform"],
+                        "source_sha256": item["source_sha256"],
                         "expected_sha256": current[path].get("sha256"),
                         "sha256": item["sha256"],
                     }
@@ -101,6 +107,8 @@ def build_update_plan(
                     "path": path,
                     "source": item["source"].as_posix(),
                     "source_path": item["source_path"],
+                    "transform": item["transform"],
+                    "source_sha256": item["source_sha256"],
                     "sha256": item["sha256"],
                 }
             )
@@ -128,6 +136,8 @@ def build_update_plan(
             {
                 "path": path,
                 "source": desired[path]["source_path"],
+                "transform": desired[path]["transform"],
+                "source_sha256": desired[path]["source_sha256"],
                 "sha256": desired[path]["sha256"],
                 "operation": "create",
             }
@@ -150,9 +160,29 @@ def build_update_plan(
     }
 
 
-def _copy_exclusive(source: Path, target: Path) -> None:
-    with source.open("rb") as source_handle, target.open("xb") as target_handle:
-        shutil.copyfileobj(source_handle, target_handle)
+def _write_exclusive(content: bytes, target: Path) -> None:
+    with target.open("xb") as handle:
+        handle.write(content)
+
+
+def _remove_empty_managed_directories(paths: list[Path], destination: Path) -> None:
+    directories: set[Path] = set()
+    for path in paths:
+        current = path.parent
+        while current != destination:
+            try:
+                current.relative_to(destination)
+            except ValueError:
+                break
+            directories.add(current)
+            current = current.parent
+    for directory in sorted(directories, key=lambda item: len(item.parts), reverse=True):
+        if directory.is_symlink():
+            continue
+        try:
+            directory.rmdir()
+        except OSError:
+            pass
 
 
 def apply_update_plan(plan: dict) -> dict:
@@ -174,6 +204,7 @@ def apply_update_plan(plan: dict) -> dict:
     current_manifest_bytes = manifest_path.read_bytes()
     backups: dict[Path, bytes] = {}
     created: list[Path] = []
+    deleted: list[Path] = []
 
     try:
         for item in plan["operations"]:
@@ -189,21 +220,31 @@ def apply_update_plan(plan: dict) -> dict:
                     raise InstallError(f"Managed file changed after preview: {target}")
                 backups[target] = target.read_bytes()
 
+            if operation in {"create", "replace"}:
+                source = Path(item["source"])
+                if sha256_file(source) != item.get("source_sha256"):
+                    raise InstallError(f"Source changed after preview: {source}")
+                transform = normalise_transform(item.get("transform"))
+                rendered = render_source_bytes(source, transform)
+                if sha256_bytes(rendered) != item["sha256"]:
+                    raise InstallError(f"Rendered source changed after preview: {source}")
+
             if operation == "create":
                 if target.exists() or target.is_symlink():
                     raise InstallError(f"Destination changed after preview: {target}")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 reject_symlinked_target_path(destination, relative)
-                _copy_exclusive(Path(item["source"]), target)
+                _write_exclusive(rendered, target)
                 created.append(target)
                 if sha256_file(target) != item["sha256"]:
                     raise InstallError(f"Checksum verification failed: {target}")
             elif operation == "replace":
-                shutil.copyfile(Path(item["source"]), target)
+                target.write_bytes(rendered)
                 if sha256_file(target) != item["sha256"]:
                     raise InstallError(f"Checksum verification failed: {target}")
             elif operation == "delete":
                 target.unlink()
+                deleted.append(target)
             else:
                 raise InstallError(f"Unknown update operation: {operation}")
 
@@ -219,8 +260,10 @@ def apply_update_plan(plan: dict) -> dict:
             path.write_bytes(content)
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_bytes(current_manifest_bytes)
+        _remove_empty_managed_directories(created, destination)
         raise
 
+    _remove_empty_managed_directories(deleted, destination)
     result = dict(plan)
     result.update({"mode": "applied", "writes_performed": True})
     return result
