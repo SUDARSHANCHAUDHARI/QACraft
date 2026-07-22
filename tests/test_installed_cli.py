@@ -58,7 +58,7 @@ class QACraftInstalledCliTests(unittest.TestCase):
             outside_checkout = parent_path / "outside"
             outside_checkout.mkdir()
 
-            venv.EnvBuilder(with_pip=True, system_site_packages=True).create(environment)
+            venv.EnvBuilder(with_pip=True).create(environment)
             python = self.environment_python(environment)
             console = self.environment_console(environment)
 
@@ -69,7 +69,6 @@ class QACraftInstalledCliTests(unittest.TestCase):
                     "pip",
                     "install",
                     "--no-deps",
-                    "--no-build-isolation",
                     "-e",
                     str(ROOT),
                 ],
