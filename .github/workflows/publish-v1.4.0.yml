@@ -1,0 +1,114 @@
+name: Publish QACraft 1.4.0
+
+on:
+  push:
+    branches:
+      - release/v1.4.0-publish
+
+permissions:
+  contents: write
+  issues: write
+  pages: write
+
+jobs:
+  publish:
+    name: Publish version 1.4.0
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out validated main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate release state
+        run: |
+          python3 scripts/generate_docs.py
+          python3 scripts/validate_repo.py
+          python3 scripts/qacraft.py release-check
+          test "$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')" = "1.4.0"
+          git diff --exit-code
+
+      - name: Build wheel and source distribution
+        run: |
+          python3 -m pip install --disable-pip-version-check build
+          python3 -m build --sdist --wheel --outdir dist
+          test -f dist/qacraft-1.4.0-py3-none-any.whl
+          test -f dist/qacraft-1.4.0.tar.gz
+
+      - name: Prepare release notes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          marker = "## 1.4.0 —"
+          start = changelog.index(marker)
+          next_section = changelog.find("\n## ", start + len(marker))
+          section = changelog[start:] if next_section < 0 else changelog[start:next_section]
+          notes = "# QACraft 1.4.0\n\n" + section.split("\n", 1)[1].strip() + "\n"
+          notes += "\n## Installation artifacts\n\n- `qacraft-1.4.0-py3-none-any.whl`\n- `qacraft-1.4.0.tar.gz`\n"
+          Path("release-notes.md").write_text(notes, encoding="utf-8")
+          PY
+
+      - name: Create annotated tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if ! git rev-parse -q --verify refs/tags/v1.4.0 >/dev/null; then
+            git tag -a v1.4.0 -m "QACraft 1.4.0"
+            git push origin refs/tags/v1.4.0
+          fi
+
+          if gh release view v1.4.0 >/dev/null 2>&1; then
+            gh release upload v1.4.0 dist/qacraft-1.4.0-py3-none-any.whl dist/qacraft-1.4.0.tar.gz --clobber
+          else
+            gh release create v1.4.0 \
+              dist/qacraft-1.4.0-py3-none-any.whl \
+              dist/qacraft-1.4.0.tar.gz \
+              --verify-tag \
+              --title "QACraft 1.4.0" \
+              --notes-file release-notes.md
+          fi
+
+      - name: Enable branch-based GitHub Pages
+        id: pages
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" \
+              --raw-field build_type=legacy \
+              --raw-field 'source[branch]=main' \
+              --raw-field 'source[path]=/docs' >/dev/null
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" \
+              --raw-field build_type=legacy \
+              --raw-field 'source[branch]=main' \
+              --raw-field 'source[path]=/docs' >/dev/null
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.html_url'
+
+      - name: Record publication result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGES_OUTCOME: ${{ steps.pages.outcome }}
+        run: |
+          if [ "$PAGES_OUTCOME" = "success" ]; then
+            PAGES_LINE="- GitHub Pages: configured from main /docs"
+          else
+            PAGES_LINE="- GitHub Pages: setup was not accepted by the repository plan/settings"
+          fi
+
+          gh issue comment 16 --body "## QACraft 1.4.0 publication\n\n- Annotated tag: \`v1.4.0\`\n- GitHub Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/v1.4.0\n- Release artifacts: wheel and source distribution attached\n${PAGES_LINE}\n- PyPI: not published because this repository has no connected PyPI account, API token, or Trusted Publisher authorization\n\nPublication workflow commit: \`${GITHUB_SHA}\`"
