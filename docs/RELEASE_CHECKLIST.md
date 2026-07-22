@@ -21,6 +21,7 @@
 - [ ] Neither archive contains VCS metadata, bytecode, caches, virtual environments, or build output.
 - [ ] Each artifact installs into a separate environment.
 - [ ] Each installed artifact passes doctor, evaluation, release-check, and lifecycle smoke tests.
+- [ ] The installed release check validates the evaluation fixture catalog.
 - [ ] Incomplete installed assets fail explicitly.
 - [ ] No package-index publication is claimed unless an upload is separately reviewed and performed.
 
@@ -42,12 +43,18 @@
 
 ## Evaluations
 
-- [ ] Rubrics load for exactly the five priority skills.
+- [ ] Rubrics load for exactly the ten priority skills.
+- [ ] Candidate schema skill enumeration exactly matches the rubric catalog.
 - [ ] Each rubric's gates, decisions, and outputs remain bound to canonical `SKILL.md`.
-- [ ] The published passing example returns exit code `0`.
+- [ ] `evaluations/fixtures.json` has unique, safe paths.
+- [ ] Every published passing example returns exit code `0`.
+- [ ] Every targeted failure fixture returns exit code `1`.
+- [ ] Each negative fixture includes its expected failed policy check.
 - [ ] Invalid structure returns exit code `2`.
-- [ ] Policy failures return exit code `1`.
 - [ ] Grounding, approvals, evidence, verdict, safety, and output checks are covered.
+- [ ] Planning and scoping outcomes are not presented as product execution passes.
+- [ ] Customer `NOT REPRODUCED` outcomes retain recorded uncertainty.
+- [ ] Rollout `CONTINUE` rejects required failed results.
 - [ ] Documentation states that evaluation does not prove evidence authenticity.
 
 ## Documentation and release
