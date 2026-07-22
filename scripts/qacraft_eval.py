@@ -49,6 +49,8 @@ def load_json(path: Path) -> Any:
 
 def load_rubrics(path: Path) -> dict[str, dict]:
     data = load_json(path)
+    if not isinstance(data, dict):
+        raise EvaluationError("Rubric catalog must be a JSON object.")
     if data.get("schema_version") != SCHEMA_VERSION:
         raise EvaluationError("Unsupported rubric schema version.")
     skills = data.get("skills")
@@ -57,14 +59,18 @@ def load_rubrics(path: Path) -> dict[str, dict]:
     return skills
 
 
-def _timestamp_valid(value: Any) -> bool:
-    if not isinstance(value, str) or not value.strip():
-        return False
+def _parse_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or "T" not in value:
+        return None
     try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
-        return False
-    return True
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _timestamp_valid(value: Any) -> bool:
+    return _parse_timestamp(value) is not None
 
 
 def _hash_valid(value: Any) -> bool:
@@ -119,7 +125,7 @@ def _check_schema(candidate: dict, expected_skill: str) -> list[str]:
     if not _nonempty_string(candidate["run_id"]):
         errors.append("run_id must be non-empty.")
     if not _timestamp_valid(candidate["generated_at"]):
-        errors.append("generated_at must be an RFC3339/ISO-8601 timestamp.")
+        errors.append("generated_at must be a timezone-aware RFC3339/ISO-8601 timestamp.")
     if not _hash_valid(candidate["context_hash"]):
         errors.append("context_hash must be a SHA-256 value.")
 
@@ -171,6 +177,7 @@ def _check_grounding(candidate: dict) -> list[str]:
     errors: list[str] = []
     evidence_ids, _ = _unique_ids(candidate["evidence"])
     source_references = set(candidate["source_references"])
+    generated_at = _parse_timestamp(candidate.get("generated_at"))
 
     for claim in candidate["claims"]:
         if not isinstance(claim, dict):
@@ -198,8 +205,11 @@ def _check_grounding(candidate: dict) -> list[str]:
         source = evidence.get("source_reference")
         if source not in source_references:
             errors.append(f"Evidence {evidence_id} has an unknown source_reference.")
-        if not _timestamp_valid(evidence.get("captured_at")):
+        captured_at = _parse_timestamp(evidence.get("captured_at"))
+        if captured_at is None:
             errors.append(f"Evidence {evidence_id} has an invalid captured_at.")
+        elif generated_at and captured_at > generated_at:
+            errors.append(f"Evidence {evidence_id} was captured after candidate generation.")
         if not _hash_valid(evidence.get("integrity_hash")):
             errors.append(f"Evidence {evidence_id} has an invalid integrity_hash.")
         if evidence.get("privacy_reviewed") is not True:
@@ -229,6 +239,7 @@ def _check_approvals(candidate: dict, rubric: dict) -> list[str]:
             errors.append(f"Duplicate approval for gate: {gate}")
         by_gate[gate] = approval
 
+    generated_at = _parse_timestamp(candidate.get("generated_at"))
     required_gates = rubric.get("required_gates", [])
     for gate in required_gates:
         approval = by_gate.get(gate)
@@ -238,9 +249,18 @@ def _check_approvals(candidate: dict, rubric: dict) -> list[str]:
         for field in ("approver", "role"):
             if not _nonempty_string(approval.get(field)):
                 errors.append(f"{gate} is missing {field}.")
-        for field in ("approved_at", "expires_at"):
-            if not _timestamp_valid(approval.get(field)):
-                errors.append(f"{gate} has invalid {field}.")
+        approved_at = _parse_timestamp(approval.get("approved_at"))
+        expires_at = _parse_timestamp(approval.get("expires_at"))
+        if approved_at is None:
+            errors.append(f"{gate} has invalid approved_at.")
+        if expires_at is None:
+            errors.append(f"{gate} has invalid expires_at.")
+        if approved_at and generated_at and approved_at > generated_at:
+            errors.append(f"{gate} was approved after the candidate was generated.")
+        if expires_at and generated_at and expires_at < generated_at:
+            errors.append(f"{gate} expired before the candidate was generated.")
+        if approved_at and expires_at and expires_at <= approved_at:
+            errors.append(f"{gate} expires_at must be after approved_at.")
         for field in ("context_hash", "document_hash"):
             if not _hash_valid(approval.get(field)):
                 errors.append(f"{gate} has invalid {field}.")
