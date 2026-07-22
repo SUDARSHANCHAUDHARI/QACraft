@@ -20,7 +20,7 @@ from qacraft_installer import (
     verify_installation,
 )
 from qacraft_updater import apply_update_plan, build_update_plan
-from release_check import ReleaseCheckError, run_release_checks
+from release_check import PRIORITY_SKILLS, ReleaseCheckError, run_release_checks
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "catalog" / "skills.json"
@@ -37,13 +37,7 @@ REQUIRED_SHARED = (
     "release-policy.md",
 )
 SUPPORTED_AGENTS = tuple(ADAPTERS)
-EVALUATED_SKILLS = (
-    "feature-qa",
-    "ticket-review",
-    "bug-report",
-    "verify-fix",
-    "release-qa",
-)
+EVALUATED_SKILLS = PRIORITY_SKILLS
 
 
 def load_catalog() -> dict:
@@ -142,7 +136,7 @@ def command_doctor(_: argparse.Namespace) -> int:
     print(f"Repository: {ROOT}")
     print(f"Skills: {len(skills)}")
     print("Generic install, update, verification, and uninstall: available")
-    print("Verified Codex and Claude Code adapters: available")
+    print(f"Verified project adapters: {len(ADAPTERS) - 1} product adapters plus generic export")
     print(f"Deterministic behavior rubrics: {len(rubrics)}")
     return 0
 
