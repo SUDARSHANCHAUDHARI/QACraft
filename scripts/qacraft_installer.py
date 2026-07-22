@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Safe generic filesystem installer for QACraft.
-
-The installer is intentionally conservative:
-- preview is the default;
-- writes require explicit ``--apply``;
-- existing destination files are never overwritten;
-- all installed files are recorded in a destination-local manifest;
-- source and destination containment are validated before copying;
-- symlinked destination paths are rejected.
-"""
+"""Safe generic filesystem installer for QACraft."""
 
 from __future__ import annotations
 
@@ -55,14 +46,12 @@ def resolve_destination(destination: Path) -> Path:
     expanded = destination.expanduser()
     parent = expanded.parent.resolve(strict=True)
     candidate = parent / expanded.name
-
     if candidate == candidate.parent:
         raise InstallError("Destination cannot be a filesystem root.")
     if candidate.is_symlink():
         raise InstallError("Destination cannot be a symbolic link.")
     if candidate.exists() and not candidate.is_dir():
         raise InstallError("Destination must be a directory or a new path.")
-
     return candidate.resolve(strict=True) if candidate.exists() else candidate
 
 
@@ -70,7 +59,6 @@ def reject_symlinked_target_path(destination: Path, relative: Path) -> None:
     current = destination
     if current.is_symlink():
         raise InstallError(f"Destination path contains a symbolic link: {current}")
-
     for part in relative.parts[:-1]:
         current = current / part
         if current.is_symlink():
@@ -84,7 +72,6 @@ def build_install_plan(root: Path, destination: Path, source_files: list[str]) -
     destination = resolve_destination(destination)
     planned: list[PlannedFile] = []
     conflicts: list[str] = []
-
     manifest_path = destination / MANIFEST_NAME
     if manifest_path.exists() or manifest_path.is_symlink():
         conflicts.append(manifest_path.as_posix())
@@ -93,31 +80,16 @@ def build_install_plan(root: Path, destination: Path, source_files: list[str]) -
         relative = Path(source_name)
         if relative.is_absolute() or ".." in relative.parts:
             raise InstallError(f"Unsafe source path: {source_name}")
-
         source = (root / relative).resolve(strict=True)
         try:
             source.relative_to(root)
         except ValueError as exc:
             raise InstallError(f"Source escapes repository root: {source_name}") from exc
-
         reject_symlinked_target_path(destination, relative)
         target = destination / relative
-        try:
-            target.relative_to(destination)
-        except ValueError as exc:
-            raise InstallError(f"Destination escapes install root: {target}") from exc
-
         if target.exists() or target.is_symlink():
             conflicts.append(target.as_posix())
-
-        planned.append(
-            PlannedFile(
-                source=source,
-                relative_path=relative,
-                destination=target,
-                sha256=sha256_file(source),
-            )
-        )
+        planned.append(PlannedFile(source, relative, target, sha256_file(source)))
 
     return {
         "mode": "preview-only",
@@ -131,12 +103,9 @@ def build_install_plan(root: Path, destination: Path, source_files: list[str]) -
 
 def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: list[str]) -> dict:
     if plan.get("conflicts"):
-        joined = "\n- ".join(plan["conflicts"])
-        raise InstallError(f"Installation refused because destination files already exist:\n- {joined}")
-
+        raise InstallError("Installation refused because destination files already exist.")
     destination = resolve_destination(Path(plan["destination"]))
     created_files: list[Path] = []
-
     try:
         destination.mkdir(parents=True, exist_ok=True)
         for item in plan["files"]:
@@ -170,8 +139,6 @@ def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: 
             ],
         }
         manifest_path = destination / MANIFEST_NAME
-        if manifest_path.exists() or manifest_path.is_symlink():
-            raise InstallError(f"Destination changed after preview: {manifest_path}")
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         created_files.append(manifest_path)
     except Exception:
@@ -179,11 +146,74 @@ def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: 
             path.unlink(missing_ok=True)
         _remove_empty_directories(destination)
         raise
-
     result = dict(plan)
-    result["mode"] = "applied"
-    result["writes_performed"] = True
-    result["manifest"] = (destination / MANIFEST_NAME).as_posix()
+    result.update({"mode": "applied", "writes_performed": True})
+    return result
+
+
+def load_manifest(destination: Path) -> tuple[Path, dict]:
+    destination = resolve_destination(destination)
+    manifest_path = destination / MANIFEST_NAME
+    if not manifest_path.exists() or manifest_path.is_symlink():
+        raise InstallError(f"QACraft manifest not found: {manifest_path}")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise InstallError(f"QACraft manifest is unreadable: {exc}") from exc
+    if manifest.get("schema_version") != 1 or not isinstance(manifest.get("files"), list):
+        raise InstallError("Unsupported or invalid QACraft manifest.")
+    return destination, manifest
+
+
+def verify_installation(destination: Path) -> dict:
+    destination, manifest = load_manifest(destination)
+    files: list[dict] = []
+    healthy = True
+    for entry in manifest["files"]:
+        relative = Path(entry.get("path", ""))
+        if relative.is_absolute() or ".." in relative.parts:
+            raise InstallError(f"Unsafe manifest path: {relative}")
+        reject_symlinked_target_path(destination, relative)
+        target = destination / relative
+        if not target.exists() or target.is_symlink():
+            status = "missing"
+            actual = None
+        else:
+            actual = sha256_file(target)
+            status = "ok" if actual == entry.get("sha256") else "modified"
+        healthy = healthy and status == "ok"
+        files.append({"path": relative.as_posix(), "status": status, "expected_sha256": entry.get("sha256"), "actual_sha256": actual})
+    return {"destination": destination.as_posix(), "healthy": healthy, "files": files}
+
+
+def build_uninstall_plan(destination: Path) -> dict:
+    destination, manifest = load_manifest(destination)
+    verification = verify_installation(destination)
+    blocked = [item["path"] for item in verification["files"] if item["status"] != "ok"]
+    return {
+        "mode": "preview-only",
+        "destination": destination.as_posix(),
+        "manifest": (destination / MANIFEST_NAME).as_posix(),
+        "files": [item["path"] for item in verification["files"] if item["status"] == "ok"],
+        "blocked": blocked,
+        "writes_performed": False,
+    }
+
+
+def apply_uninstall_plan(plan: dict) -> dict:
+    if plan.get("blocked"):
+        raise InstallError("Uninstall refused because installed files are missing or modified.")
+    destination = resolve_destination(Path(plan["destination"]))
+    current = build_uninstall_plan(destination)
+    if current.get("blocked") or current.get("files") != plan.get("files"):
+        raise InstallError("Installation changed after uninstall preview.")
+    for relative_name in current["files"]:
+        target = destination / relative_name
+        target.unlink()
+    (destination / MANIFEST_NAME).unlink()
+    _remove_empty_directories(destination)
+    result = dict(current)
+    result.update({"mode": "applied", "writes_performed": True})
     return result
 
 
