@@ -20,20 +20,25 @@
 - [ ] The source distribution contains the canonical sources, tests, manifest, and build recipe.
 - [ ] Neither archive contains VCS metadata, bytecode, caches, virtual environments, or build output.
 - [ ] Each artifact installs into a separate environment.
-- [ ] Each installed artifact passes doctor, evaluation, release-check, and Codex lifecycle smoke tests.
+- [ ] Each installed artifact passes doctor, evaluation, release-check, and lifecycle smoke tests.
 - [ ] Incomplete installed assets fail explicitly.
 - [ ] No package-index publication is claimed unless an upload is separately reviewed and performed.
 
-## Installer lifecycle
+## Verified adapters
 
-- [ ] Generic install, verify, update, and uninstall tests pass.
-- [ ] Codex install uses `.agents/skills/` and its independent manifest.
-- [ ] Claude Code install uses `.claude/skills/` and its independent manifest.
-- [ ] Preview commands perform no writes.
-- [ ] Existing unowned files are treated as conflicts.
-- [ ] Modified managed files block update and uninstall.
-- [ ] Failed mutation tests prove rollback.
+- [ ] Generic export uses `skills/` and `.qacraft-manifest.json`.
+- [ ] Codex uses `.agents/skills/` and `.agents/qacraft/manifest.json`.
+- [ ] Claude Code uses `.claude/skills/` and `.claude/qacraft/manifest.json`.
+- [ ] GitHub Copilot uses `.github/skills/` and `.github/qacraft/manifest.json`.
+- [ ] Gemini CLI uses `.gemini/skills/` and `.gemini/qacraft/manifest.json`.
+- [ ] OpenCode uses `.opencode/skills/` and `.opencode/qacraft/manifest.json`.
+- [ ] Every product adapter path is supported by official product documentation.
+- [ ] Installed `SKILL.md` files contain valid `name` and `description` frontmatter.
+- [ ] All product adapters can coexist with independent manifests.
+- [ ] Update and uninstall affect only the selected adapter.
+- [ ] Conflicts, modified files, symlinks, and unsafe paths remain blocked.
 - [ ] Unrelated project files and directories remain untouched.
+- [ ] No automatic agent detection, user-global installation, or agent configuration modification was added.
 
 ## Evaluations
 
