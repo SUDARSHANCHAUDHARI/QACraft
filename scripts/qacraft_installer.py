@@ -5,10 +5,11 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+from qacraft_transforms import normalise_transform, render_source_bytes
 
 MANIFEST_NAME = ".qacraft-manifest.json"
 
@@ -23,17 +24,25 @@ class PlannedFile:
     source_path: Path
     relative_path: Path
     destination: Path
+    transform: str | None
+    source_sha256: str
     sha256: str
 
-    def as_dict(self) -> dict[str, str]:
+    def as_dict(self) -> dict[str, str | None]:
         return {
             "source": self.source.as_posix(),
             "source_path": self.source_path.as_posix(),
             "relative_path": self.relative_path.as_posix(),
             "destination": self.destination.as_posix(),
+            "transform": self.transform,
+            "source_sha256": self.source_sha256,
             "sha256": self.sha256,
             "operation": "create",
         }
+
+
+def sha256_bytes(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
 
 
 def sha256_file(path: Path) -> str:
@@ -53,17 +62,19 @@ def safe_relative_path(value: str | Path, *, label: str) -> Path:
 
 def normalise_file_specs(
     file_specs: list[str | dict[str, str]],
-) -> list[tuple[Path, Path]]:
-    normalised: list[tuple[Path, Path]] = []
+) -> list[tuple[Path, Path, str | None]]:
+    normalised: list[tuple[Path, Path, str | None]] = []
     targets: set[str] = set()
 
     for spec in file_specs:
         if isinstance(spec, str):
             source_value = spec
             target_value = spec
+            transform = None
         elif isinstance(spec, dict):
             source_value = str(spec.get("source", ""))
             target_value = str(spec.get("target", ""))
+            transform = normalise_transform(spec.get("transform"))
         else:
             raise InstallError(f"Unsupported file specification: {spec!r}")
 
@@ -73,7 +84,7 @@ def normalise_file_specs(
         if target_key in targets:
             raise InstallError(f"Duplicate target path in installation plan: {target_key}")
         targets.add(target_key)
-        normalised.append((source_path, target_path))
+        normalised.append((source_path, target_path, transform))
 
     return normalised
 
@@ -130,13 +141,14 @@ def build_install_plan(
     if manifest_path.exists() or manifest_path.is_symlink():
         conflicts.append(manifest_path.as_posix())
 
-    for source_relative, target_relative in normalise_file_specs(file_specs):
+    for source_relative, target_relative, transform in normalise_file_specs(file_specs):
         source = (root / source_relative).resolve(strict=True)
         try:
             source.relative_to(root)
         except ValueError as exc:
             raise InstallError(f"Source escapes repository root: {source_relative}") from exc
 
+        rendered = render_source_bytes(source, transform)
         reject_symlinked_target_path(destination, target_relative)
         target = destination / target_relative
         try:
@@ -152,7 +164,9 @@ def build_install_plan(
                 source_path=source_relative,
                 relative_path=target_relative,
                 destination=target,
-                sha256=sha256_file(source),
+                transform=transform,
+                source_sha256=sha256_file(source),
+                sha256=sha256_bytes(rendered),
             )
         )
 
@@ -167,9 +181,9 @@ def build_install_plan(
     }
 
 
-def _copy_exclusive(source: Path, target: Path) -> None:
-    with source.open("rb") as source_handle, target.open("xb") as target_handle:
-        shutil.copyfileobj(source_handle, target_handle)
+def _write_exclusive(content: bytes, target: Path) -> None:
+    with target.open("xb") as handle:
+        handle.write(content)
 
 
 def _remove_empty_managed_directories(paths: list[Path], destination: Path) -> None:
@@ -216,6 +230,13 @@ def apply_install_plan(
         destination.mkdir(parents=True, exist_ok=True)
         for item in plan["files"]:
             source = Path(item["source"])
+            if sha256_file(source) != item.get("source_sha256"):
+                raise InstallError(f"Source changed after preview: {source}")
+            transform = normalise_transform(item.get("transform"))
+            rendered = render_source_bytes(source, transform)
+            if sha256_bytes(rendered) != item["sha256"]:
+                raise InstallError(f"Rendered source changed after preview: {source}")
+
             relative = safe_relative_path(item["relative_path"], label="target")
             reject_symlinked_target_path(destination, relative)
             target = destination / relative
@@ -223,7 +244,7 @@ def apply_install_plan(
             reject_symlinked_target_path(destination, relative)
             if target.exists() or target.is_symlink():
                 raise InstallError(f"Destination changed after preview: {target}")
-            _copy_exclusive(source, target)
+            _write_exclusive(rendered, target)
             created_files.append(target)
             if sha256_file(target) != item["sha256"]:
                 raise InstallError(f"Checksum verification failed: {target}")
@@ -245,6 +266,8 @@ def apply_install_plan(
                         item.get("source_path", item["relative_path"]),
                         label="source",
                     ).as_posix(),
+                    "transform": normalise_transform(item.get("transform")),
+                    "source_sha256": item.get("source_sha256"),
                     "sha256": item["sha256"],
                     "operation": "create",
                 }
