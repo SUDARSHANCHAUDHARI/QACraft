@@ -30,8 +30,14 @@ class QACraftCliTests(unittest.TestCase):
         result = self.run_cli("doctor")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("QACraft doctor passed.", result.stdout)
-        self.assertIn("Generic install, update, verification, and uninstall: available", result.stdout)
-        self.assertIn("Agent-specific installers: preview-only", result.stdout)
+        self.assertIn(
+            "Generic install, update, verification, and uninstall: available",
+            result.stdout,
+        )
+        self.assertIn(
+            "Verified Codex and Claude Code adapters: available",
+            result.stdout,
+        )
 
     def test_plan_install_is_preview_only_and_complete(self):
         with tempfile.TemporaryDirectory() as destination:
@@ -53,7 +59,10 @@ class QACraftCliTests(unittest.TestCase):
             self.assertIn("release-policy.md", plan["shared_policies"])
             self.assertIn("shared/release-policy.md", plan["source_files"])
             self.assertIn("skills/feature-qa/SKILL.md", plan["source_files"])
-            self.assertIn("skills/bug-report/templates/report.yaml", plan["source_files"])
+            self.assertIn(
+                "skills/bug-report/templates/report.yaml",
+                plan["source_files"],
+            )
             self.assertEqual(list(Path(destination).iterdir()), [])
 
     def test_generic_install_without_apply_is_preview_only(self):
@@ -95,7 +104,9 @@ class QACraftCliTests(unittest.TestCase):
             self.assertEqual(manifest["agent"], "generic")
             self.assertEqual(manifest["skills"], ["feature-qa"])
             record = next(
-                item for item in manifest["files"] if item["path"] == "skills/feature-qa/SKILL.md"
+                item
+                for item in manifest["files"]
+                if item["path"] == "skills/feature-qa/SKILL.md"
             )
             actual_hash = hashlib.sha256(installed.read_bytes()).hexdigest()
             self.assertEqual(record["sha256"], actual_hash)
@@ -119,9 +130,10 @@ class QACraftCliTests(unittest.TestCase):
             self.assertEqual(conflict.read_text(encoding="utf-8"), "keep me")
             self.assertFalse((destination / ".qacraft-manifest.json").exists())
 
-    def test_agent_specific_install_is_rejected(self):
+    def test_codex_install_preview_uses_verified_layout(self):
         with tempfile.TemporaryDirectory() as parent:
-            destination = Path(parent) / "skills"
+            destination = Path(parent) / "project"
+            destination.mkdir()
             result = self.run_cli(
                 "install",
                 "feature-qa",
@@ -129,11 +141,19 @@ class QACraftCliTests(unittest.TestCase):
                 "codex",
                 "--destination",
                 str(destination),
-                "--apply",
             )
-            self.assertEqual(result.returncode, 2)
-            self.assertIn("Only the generic adapter supports installation", result.stderr)
-            self.assertFalse(destination.exists())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            plan = json.loads(result.stdout)
+            self.assertEqual(plan["agent"], "codex")
+            self.assertIn(
+                ".agents/skills/feature-qa/SKILL.md",
+                plan["target_files"],
+            )
+            self.assertEqual(
+                plan["manifest_relative"],
+                ".agents/qacraft/manifest.json",
+            )
+            self.assertFalse((destination / ".agents").exists())
 
     def test_plan_install_rejects_unknown_skill(self):
         result = self.run_cli(
