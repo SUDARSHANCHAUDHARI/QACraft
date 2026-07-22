@@ -1,7 +1,7 @@
 [project]
 name = "qacraft"
-version = "1.0.0"
-description = "Detailed, evidence-based workflow specifications for everyday QA work"
+version = "1.1.0"
+description = "Installable, verifiable QA skills and deterministic behavior evaluations"
 requires-python = ">=3.10"
 dependencies = []
 

@@ -1,140 +1,176 @@
 # QACraft
 
-A repository of 25 detailed, evidence-based QA workflow specifications for everyday QA work.
+Reusable AI skills, safe installation lifecycle, and deterministic behavior evaluations for everyday software QA work.
 
-Each skill contains:
+QACraft 1.1.0 includes:
 
-- `SKILL.md`: platform-neutral operating specification
-- `overview.html`: self-contained visual documentation
-- `examples/request.md`: sample invocation
-- `examples/expected-output.md`: sample controlled result
-- `templates/report.yaml`: structured output starting point
+- 25 detailed QA workflow skills
+- shared QA, evidence, security, approval, data, result, publication, and release policies
+- generic, Codex, and Claude Code project adapters
+- preview-first install, verify, update, and uninstall commands
+- versioned manifests, SHA-256 verification, rollback, and conflict protection
+- deterministic structured-report evaluations for five priority QA skills
+- generated HTML documentation, schemas, examples, templates, tests, and release guidance
 
-The pack also includes shared policies, JSON Schemas, generated documentation, validation scripts, tests, and a GitHub Actions workflow.
+No third-party Python packages are required. Python 3.10 or newer is supported.
 
-## Skill catalog
+## Start here
 
-### Planning and scope
-
-- `/ticket-review`
-- `/test-plan`
-- `/regression-scope`
-- `/platform-matrix`
-
-### Execution and product behaviour
-
-- `/feature-qa`
-- `/exploratory-qa`
-- `/smoke-test`
-- `/permission-qa`
-- `/api-qa`
-- `/network-qa`
-- `/offline-qa`
-- `/playback-qa`
-
-### Defects and verification
-
-- `/bug-report`
-- `/bug-triage`
-- `/verify-fix`
-- `/customer-issue-repro`
-- `/flaky-test-triage`
-
-### Release and operations
-
-- `/release-qa`
-- `/staged-rollout-check`
-- `/incident-qa`
-
-### Automation and maintenance
-
-- `/automation-review`
-- `/test-case-review`
-
-### Communication and improvement
-
-- `/qa-daily-summary`
-- `/qa-handoff`
-- `/qa-retrospective`
-
-## Browse the HTML documentation
-
-Open:
-
-```text
-docs/index.html
+```bash
+python3 scripts/qacraft.py doctor
+python3 scripts/qacraft.py list
+python3 scripts/demo.py
 ```
 
-Or serve the repository locally:
+The end-to-end demo uses a temporary local project. It installs and updates a Codex skill pack, verifies the manifest, evaluates the passing fixture, uninstalls the pack, and confirms unrelated files remain untouched.
+
+## Install into Codex
+
+Preview:
+
+```bash
+python3 scripts/qacraft.py install feature-qa bug-report \
+  --agent codex \
+  --destination /path/to/project
+```
+
+Apply:
+
+```bash
+python3 scripts/qacraft.py install feature-qa bug-report \
+  --agent codex \
+  --destination /path/to/project \
+  --apply
+```
+
+Skills are installed under `.agents/skills/`. QACraft stores an independent manifest under `.agents/qacraft/`.
+
+## Install into Claude Code
+
+```bash
+python3 scripts/qacraft.py install feature-qa bug-report \
+  --agent claude-code \
+  --destination /path/to/project \
+  --apply
+```
+
+Skills are installed under `.claude/skills/`. The Claude Code manifest is stored under `.claude/qacraft/`.
+
+## Verify, update, and uninstall
+
+```bash
+python3 scripts/qacraft.py verify-install \
+  --agent codex \
+  --destination /path/to/project
+
+python3 scripts/qacraft.py update feature-qa bug-report release-qa \
+  --agent codex \
+  --destination /path/to/project \
+  --apply
+
+python3 scripts/qacraft.py uninstall \
+  --agent codex \
+  --destination /path/to/project \
+  --apply
+```
+
+Install, update, and uninstall are preview-only without `--apply`. Existing unowned files are never overwritten. Modified managed files block update and uninstall. Failed installs and updates roll back QACraft-managed changes.
+
+## Evaluate structured QA reports
+
+```bash
+python3 scripts/qacraft.py eval-list
+python3 scripts/qacraft.py evaluate \
+  --input evaluations/examples/feature-qa-pass.json
+```
+
+Deterministic rubrics are included for:
+
+- `/feature-qa`
+- `/ticket-review`
+- `/bug-report`
+- `/verify-fix`
+- `/release-qa`
+
+The evaluator checks schema conformance, source grounding, approval gates, evidence quality, verdict discipline, safety declarations, and output contracts. It does not call an AI model and does not prove that external evidence is authentic.
+
+## Validate the repository
+
+```bash
+python3 scripts/generate_docs.py
+python3 scripts/validate_repo.py
+python3 -m unittest discover -s tests -v
+```
+
+Generated documentation must be committed. The pull-request workflow runs one Python 3.12 validation job and does not run again after merge.
+
+## Documentation
+
+- [Installation and lifecycle](docs/INSTALLATION.md)
+- [Compatibility matrix](docs/COMPATIBILITY.md)
+- [Behavior evaluations](docs/EVALUATIONS.md)
+- [Phase 2 architecture](docs/PHASE_2.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Changelog](CHANGELOG.md)
+- HTML documentation: `docs/index.html`
+
+Serve the HTML documentation locally:
 
 ```bash
 python3 scripts/serve.py
 ```
 
-Then open the URL printed by the script.
+The generated site already lives under `/docs`. GitHub Pages may be enabled manually using branch-based publishing when the repository plan and visibility support it. No additional automatic Pages workflow is required.
 
-## Validate the repository
+## Skill catalog
 
-No third-party Python packages are required.
+### Planning and scope
 
-```bash
-python3 scripts/validate_repo.py
-python3 -m unittest discover -s tests -v
-```
+`/ticket-review` · `/test-plan` · `/regression-scope` · `/platform-matrix`
 
-## Regenerate documentation
+### Execution and product behaviour
 
-The machine-readable source is `catalog/skills.json`.
+`/feature-qa` · `/exploratory-qa` · `/smoke-test` · `/permission-qa` · `/api-qa` · `/network-qa` · `/offline-qa` · `/playback-qa`
 
-```bash
-python3 scripts/generate_docs.py
-python3 scripts/validate_repo.py
-```
+### Defects and verification
 
-## Use with AI coding agents
+`/bug-report` · `/bug-triage` · `/verify-fix` · `/customer-issue-repro` · `/flaky-test-triage`
 
-### Claude Code
+### Release and operations
 
-Copy or link the selected folder into your project or user skills directory:
+`/release-qa` · `/staged-rollout-check` · `/incident-qa`
 
-```text
-.claude/skills/<skill-name>/
-```
+### Automation and maintenance
 
-Keep the shared policy files available and instruct the agent to read them before using a skill.
+`/automation-review` · `/test-case-review`
 
-### Codex and repository-aware agents
+### Communication and improvement
 
-Place this repository beside the project or copy the selected `SKILL.md` into the project. `AGENTS.md` explains how to resolve commands and shared policies.
+`/qa-daily-summary` · `/qa-handoff` · `/qa-retrospective`
 
-### Other agents
+## Safety model
 
-Load the selected `SKILL.md` plus the shared policies as instructions. The workflow remains platform-neutral, but tool names and external-system actions need adapters.
+QACraft skills are instructions and specifications—not a permission system.
 
-## Important safety model
+Production adopters must enforce:
 
-These documents are specifications, not security enforcement.
+- least-privilege filesystem, command, repository, browser, and network permissions
+- secret isolation and customer-data controls
+- authenticated, version-bound approval gates
+- evidence privacy, integrity, access, retention, and deletion controls
+- idempotent, conflict-aware external writes
+- monitoring, audit logs, incident response, and rollback
 
-Production use requires:
-
-- least-privilege runtime permissions,
-- command and network allowlists,
-- secret isolation,
-- version-bound approvals,
-- evidence privacy and integrity controls,
-- safe data ownership and cleanup,
-- idempotent external writes,
-- conflict-aware publication,
-- monitoring and audit logs.
-
-Never grant production, customer, or security-sensitive access merely because a skill file describes safe behaviour.
+Never grant production, customer, or security-sensitive access merely because a skill describes safe behavior.
 
 ## Repository structure
 
 ```text
-qacraft/
+QACraft/
+├── adapters/
 ├── catalog/
 ├── docs/
+├── evaluations/
 ├── schemas/
 ├── scripts/
 ├── shared/
@@ -143,6 +179,7 @@ qacraft/
 ├── .github/workflows/
 ├── AGENTS.md
 ├── CLAUDE.md
+├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── SECURITY.md
 └── README.md

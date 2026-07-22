@@ -1,0 +1,55 @@
+# QACraft compatibility matrix
+
+## Runtime
+
+| Component | Supported | Notes |
+|---|---:|---|
+| Python | 3.10+ | Standard library only |
+| macOS | Yes | Filesystem lifecycle and evaluator supported |
+| Linux | Yes | Primary CI environment |
+| Windows | Expected | Uses `pathlib`; validate locally before release-critical use |
+| Network access | Not required | Installer and evaluator are local-only |
+
+## Agent adapters
+
+| Adapter | Discovery path | Manifest | Lifecycle |
+|---|---|---|---|
+| Generic | `skills/<slug>/` | `.qacraft-manifest.json` | install, verify, update, uninstall |
+| Codex | `.agents/skills/<slug>/` | `.agents/qacraft/manifest.json` | install, verify, update, uninstall |
+| Claude Code | `.claude/skills/<slug>/` | `.claude/qacraft/manifest.json` | install, verify, update, uninstall |
+
+The destination passed to the CLI is always an explicit project or installation root. QACraft does not guess global directories or change agent configuration files.
+
+## Behavior evaluations
+
+Deterministic rubrics are included for:
+
+- `/feature-qa`
+- `/ticket-review`
+- `/bug-report`
+- `/verify-fix`
+- `/release-qa`
+
+The evaluator checks structured candidate reports for schema conformance, grounding, approvals, evidence, verdict discipline, safety declarations, and output contracts. It does not call an AI model and does not authenticate evidence against external systems.
+
+## Compatibility guarantees
+
+- Existing unowned files are never overwritten.
+- Modified managed files block update and uninstall.
+- Agent manifests are independent and may coexist in one project.
+- Canonical QACraft source files remain unchanged.
+- Agent copies receive deterministic standards-compatible frontmatter normalization.
+- Failed installs and updates roll back QACraft-managed changes.
+
+## Intentionally unsupported
+
+- Automatic agent detection
+- User-global installation
+- Force overwrite or force deletion
+- Symlink-based installation
+- Package-manager installation
+- Production/customer system access
+- Runtime permission enforcement through prompt text
+- Automatic GitHub Pages deployment
+
+The generated documentation already lives under `/docs`. Repository owners may enable branch-based GitHub Pages manually when their GitHub plan and repository visibility support it, without adding another automatic Actions workflow.
