@@ -8,28 +8,37 @@ Completed:
 
 - `scripts/qacraft.py list`
 - `scripts/qacraft.py doctor`
-- `scripts/qacraft.py plan-install`
+- read-only installation planning
 - adapter safety contract
+- complete source-file planning
 - automated CLI tests
-- complete source-file planning for skills and shared policies
 
-## Phase 2.2a — Generic installer
+## Phase 2.2 — Installer and lifecycle
 
-The generic adapter can install QACraft files into an explicit destination without assuming any AI-agent-specific folder structure.
+Completed capabilities:
 
-Safety properties:
+- generic filesystem adapter
+- verified Codex project adapter
+- verified Claude Code project adapter
+- preview-first installation
+- explicit `--apply` before mutations
+- conflict and symbolic-link protection
+- SHA-256 verification
+- separate versioned manifests
+- install verification
+- safe update with rollback
+- safe manifest-driven uninstall
+- preservation of unrelated project files and directories
 
-- preview is the default
-- writes require `--apply`
-- existing files and manifests are treated as conflicts
-- no overwrite, deletion, replacement, or symlink support
-- source and destination containment checks
-- SHA-256 verification after every copy
-- destination-local `.qacraft-manifest.json`
-- partial writes are removed if installation fails
-- Claude Code and Codex remain preview-only
+## Adapter layouts
 
-Update and uninstall are not included yet. They require manifest verification and modified-file protection before they can be implemented safely.
+| Adapter | Skill path | Shared policies | Manifest |
+|---|---|---|---|
+| `generic` | `skills/<skill>/SKILL.md` | `shared/` | `.qacraft-manifest.json` |
+| `codex` | `.agents/skills/<skill>/SKILL.md` | `.agents/qacraft/shared/` | `.agents/qacraft/manifest.json` |
+| `claude-code` | `.claude/skills/<skill>/SKILL.md` | `.claude/qacraft/shared/` | `.claude/qacraft/manifest.json` |
+
+The explicit destination is always the project or installation root. QACraft does not guess user-global paths, detect agents automatically, or modify agent configuration files.
 
 ## Commands
 
@@ -45,73 +54,74 @@ Check repository health:
 python3 scripts/qacraft.py doctor
 ```
 
-Preview a platform-neutral plan:
+Preview an adapter installation:
 
 ```bash
 python3 scripts/qacraft.py plan-install feature-qa bug-report \
-  --agent generic \
-  --destination ./example-agent-skills
+  --agent codex \
+  --destination ./my-project
 ```
 
-Preview the generic installer, including checksums and conflicts:
+Apply the reviewed installation:
 
 ```bash
 python3 scripts/qacraft.py install feature-qa bug-report \
-  --agent generic \
-  --destination ./example-agent-skills
-```
-
-Apply the reviewed generic installation:
-
-```bash
-python3 scripts/qacraft.py install feature-qa bug-report \
-  --agent generic \
-  --destination ./example-agent-skills \
+  --agent codex \
+  --destination ./my-project \
   --apply
 ```
 
-Install all skills:
+Verify installed files:
 
 ```bash
-python3 scripts/qacraft.py install --all \
-  --agent generic \
-  --destination ./example-agent-skills \
+python3 scripts/qacraft.py verify-install \
+  --agent codex \
+  --destination ./my-project
+```
+
+Update the desired installed skill set:
+
+```bash
+python3 scripts/qacraft.py update feature-qa bug-report release-qa \
+  --agent codex \
+  --destination ./my-project \
   --apply
 ```
 
-## Installed layout
+Preview or apply uninstall:
 
-The generic adapter preserves repository-relative paths:
+```bash
+python3 scripts/qacraft.py uninstall \
+  --agent codex \
+  --destination ./my-project
 
-```text
-example-agent-skills/
-├── .qacraft-manifest.json
-├── shared/
-│   └── ...
-└── skills/
-    ├── feature-qa/
-    │   ├── SKILL.md
-    │   ├── examples/
-    │   └── templates/
-    └── ...
+python3 scripts/qacraft.py uninstall \
+  --agent codex \
+  --destination ./my-project \
+  --apply
 ```
 
-The generic layout is intentionally neutral. It does not claim that a particular agent will automatically discover or load these files.
+Replace `codex` with `claude-code` or `generic` as required.
 
-## Next slices
+## Safety model
 
-### Phase 2.2b — Lifecycle management
+- Preview is the default for install, update, and uninstall.
+- Existing or unowned target files are conflicts.
+- Managed files must still match their manifest checksums before update or uninstall.
+- Manifests and files are rechecked immediately before mutation.
+- Failed installs and updates roll back their managed changes.
+- Cleanup removes only empty ancestors of QACraft-managed paths.
+- Codex, Claude Code, and generic manifests are independent.
+- No network, customer, production, or external-system access is performed.
 
-- verify installed manifests
-- detect locally modified files
-- safe update preview and apply
-- safe uninstall preview and apply
-- refuse deletion of modified or untracked files
+## Next slice: Phase 2.3 — Behavior evaluations
 
-### Phase 2.2c — Verified agent adapters
+Build a local, deterministic evaluation schema and runner for:
 
-Add Claude Code and Codex adapters only after their current instruction-loading formats and destinations are verified. Each adapter must retain preview, conflict detection, checksums, manifests, and rollback.
+- `/feature-qa`
+- `/ticket-review`
+- `/bug-report`
+- `/verify-fix`
+- `/release-qa`
 
-### Phase 2.3 — Behavior evaluations
-
-Build rubric-based evaluations for `/feature-qa`, `/ticket-review`, `/bug-report`, `/verify-fix`, and `/release-qa`.
+The initial evaluation runner should inspect supplied candidate outputs without calling external models or systems. Rubrics should check hallucination control, approval gates, evidence quality, verdict discipline, safety boundaries, and output-schema conformance.
