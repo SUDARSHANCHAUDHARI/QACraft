@@ -17,6 +17,28 @@ PRIORITY_SKILLS = (
     "bug-report",
     "verify-fix",
     "release-qa",
+    "test-plan",
+    "regression-scope",
+    "customer-issue-repro",
+    "api-qa",
+    "staged-rollout-check",
+)
+
+PUBLISHED_PASS_SKILLS = (
+    "feature-qa",
+    "test-plan",
+    "regression-scope",
+    "customer-issue-repro",
+    "api-qa",
+    "staged-rollout-check",
+)
+
+TARGETED_FAILURE_SKILLS = (
+    "test-plan",
+    "regression-scope",
+    "customer-issue-repro",
+    "api-qa",
+    "staged-rollout-check",
 )
 
 REQUIRED_RELEASE_FILES = (
@@ -40,6 +62,7 @@ REQUIRED_RELEASE_FILES = (
     "docs/RELEASE_CHECKLIST.md",
     "scripts/demo.py",
     "evaluations/rubrics.json",
+    "evaluations/fixtures.json",
     "evaluations/examples/feature-qa-pass.json",
     "schemas/evaluation-candidate.schema.json",
     "schemas/evaluation-report.schema.json",
@@ -55,6 +78,13 @@ def _read(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except OSError as exc:
         raise ReleaseCheckError(f"Cannot read {path}: {exc}") from exc
+
+
+def _load_json(path: Path) -> object:
+    try:
+        return json.loads(_read(path))
+    except json.JSONDecodeError as exc:
+        raise ReleaseCheckError(f"Cannot parse JSON from {path}: {exc}") from exc
 
 
 def _version(root: Path) -> str:
@@ -112,6 +142,106 @@ def _check(checks: list[dict], check_id: str, passed: bool, detail: str) -> None
     checks.append({"id": check_id, "passed": passed, "detail": detail})
 
 
+def _safe_fixture_path(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = Path(value)
+    return not path.is_absolute() and ".." not in path.parts
+
+
+def _validate_published_fixtures(
+    root: Path,
+    rubric_path: Path,
+    rubrics: dict[str, dict],
+) -> list[str]:
+    errors: list[str] = []
+    manifest_path = root / "evaluations" / "fixtures.json"
+    try:
+        manifest = _load_json(manifest_path)
+    except ReleaseCheckError as exc:
+        return [str(exc)]
+
+    if not isinstance(manifest, dict):
+        return ["Fixture catalog must be a JSON object."]
+    if manifest.get("schema_version") != "1.0.0":
+        errors.append("Fixture catalog schema_version must be 1.0.0.")
+
+    entries = manifest.get("fixtures")
+    if not isinstance(entries, list) or not entries:
+        return errors + ["Fixture catalog must define a non-empty fixtures list."]
+
+    seen_paths: set[str] = set()
+    passing_skills: set[str] = set()
+    failing_skills: set[str] = set()
+
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            errors.append(f"Fixture entry {index} must be an object.")
+            continue
+
+        relative = entry.get("path")
+        skill = entry.get("skill")
+        expected_pass = entry.get("expected_pass")
+        expected_failed = entry.get("expected_failed_checks", [])
+
+        if not _safe_fixture_path(relative):
+            errors.append(f"Fixture entry {index} has an unsafe path.")
+            continue
+        if relative in seen_paths:
+            errors.append(f"Duplicate fixture path: {relative}")
+            continue
+        seen_paths.add(relative)
+
+        if skill not in rubrics:
+            errors.append(f"Fixture {relative} references unknown skill: {skill}")
+            continue
+        if not isinstance(expected_pass, bool):
+            errors.append(f"Fixture {relative} expected_pass must be boolean.")
+            continue
+        if not isinstance(expected_failed, list) or not all(
+            isinstance(item, str) and item for item in expected_failed
+        ):
+            errors.append(
+                f"Fixture {relative} expected_failed_checks must contain strings."
+            )
+            continue
+
+        fixture_path = root / "evaluations" / relative
+        try:
+            report = evaluate_file(fixture_path, rubric_path, skill=skill)
+        except EvaluationError as exc:
+            errors.append(f"Fixture {relative} could not be evaluated: {exc}")
+            continue
+
+        if report["passed"] != expected_pass:
+            errors.append(
+                f"Fixture {relative} expected passed={expected_pass}, "
+                f"received passed={report['passed']}."
+            )
+            continue
+
+        if expected_pass:
+            passing_skills.add(skill)
+        else:
+            failing_skills.add(skill)
+            failed_checks = set(report["summary"]["failed_checks"])
+            missing = sorted(set(expected_failed) - failed_checks)
+            if missing:
+                errors.append(
+                    f"Fixture {relative} did not fail expected checks: {missing}"
+                )
+
+    missing_pass = sorted(set(PUBLISHED_PASS_SKILLS) - passing_skills)
+    if missing_pass:
+        errors.append(f"Missing passing fixtures for skills: {missing_pass}")
+
+    missing_failure = sorted(set(TARGETED_FAILURE_SKILLS) - failing_skills)
+    if missing_failure:
+        errors.append(f"Missing targeted failure fixtures for skills: {missing_failure}")
+
+    return errors
+
+
 def run_release_checks(root: Path) -> dict:
     root = root.resolve(strict=True)
     version = _version(root)
@@ -136,7 +266,8 @@ def run_release_checks(root: Path) -> dict:
         rf"^## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
     )
     changelog_ok = any(
-        re.search(pattern, changelog, flags=re.MULTILINE) for pattern in changelog_patterns
+        re.search(pattern, changelog, flags=re.MULTILINE)
+        for pattern in changelog_patterns
     )
     _check(
         checks,
@@ -164,6 +295,7 @@ def run_release_checks(root: Path) -> dict:
             "release-check command",
             ("qacraft release-check", "scripts/qacraft.py release-check"),
         ),
+        ("fixture catalog", ("evaluations/fixtures.json",)),
         ("demo command", ("scripts/demo.py",)),
         ("installation guide", ("docs/INSTALLATION.md",)),
         ("compatibility guide", ("docs/COMPATIBILITY.md",)),
@@ -178,7 +310,7 @@ def run_release_checks(root: Path) -> dict:
         checks,
         "readme_quickstart",
         not missing_readme,
-        "README documents source and artifact setup, lifecycle, evaluation, demo, and release checks."
+        "README documents source and artifact setup, lifecycle, evaluation fixtures, demo, and release checks."
         if not missing_readme
         else f"README is missing: {missing_readme}",
     )
@@ -214,7 +346,7 @@ def run_release_checks(root: Path) -> dict:
         checks,
         "rubric_coverage",
         coverage_ok,
-        "Rubrics cover exactly the five priority skills."
+        "Rubrics cover exactly the ten priority skills."
         if coverage_ok
         else f"Rubric coverage mismatch: {sorted(rubrics)} {rubric_error}".strip(),
     )
@@ -229,13 +361,22 @@ def run_release_checks(root: Path) -> dict:
             contract_errors.append(f"{skill}: approval gates differ from SKILL.md")
         if rubric.get("required_outputs") != contract["outputs"]:
             contract_errors.append(f"{skill}: required outputs differ from SKILL.md")
-        unknown_decisions = sorted(
-            set(rubric.get("allowed_decisions", [])) - set(contract["decisions"])
-        )
+
+        allowed = rubric.get("allowed_decisions", [])
+        unknown_decisions = sorted(set(allowed) - set(contract["decisions"]))
         if unknown_decisions:
             contract_errors.append(
                 f"{skill}: decisions not present in SKILL.md: {unknown_decisions}"
             )
+
+        unknown_success = sorted(
+            set(rubric.get("success_decisions", [])) - set(allowed)
+        )
+        if unknown_success:
+            contract_errors.append(
+                f"{skill}: success decisions are not allowed: {unknown_success}"
+            )
+
     _check(
         checks,
         "rubric_skill_binding",
@@ -245,20 +386,15 @@ def run_release_checks(root: Path) -> dict:
         else "; ".join(contract_errors),
     )
 
-    example_path = root / "evaluations" / "examples" / "feature-qa-pass.json"
-    try:
-        example_report = evaluate_file(example_path, rubric_path)
-    except EvaluationError as exc:
-        example_ok = False
-        example_detail = f"Passing example could not be evaluated: {exc}"
-    else:
-        example_ok = example_report["passed"]
-        example_detail = (
-            "The published feature-qa example passes all behavior checks."
-            if example_ok
-            else f"Published example failed: {example_report['summary']['failed_checks']}"
-        )
-    _check(checks, "published_example", example_ok, example_detail)
+    fixture_errors = _validate_published_fixtures(root, rubric_path, rubrics)
+    _check(
+        checks,
+        "published_fixtures",
+        not fixture_errors,
+        "Published passing and targeted failure fixtures match their declared evaluation results."
+        if not fixture_errors
+        else "; ".join(fixture_errors),
+    )
 
     phase_two = _read(root / "docs" / "PHASE_2.md")
     phase_complete = "Phase 2 is complete." in phase_two and "Next slice" not in phase_two
