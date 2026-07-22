@@ -1,6 +1,6 @@
 # QACraft adapter contract
 
-Adapters translate QACraft's platform-neutral source layout into a verified agent-specific installation plan while preserving every source file unchanged.
+Adapters translate QACraft's platform-neutral source layout into a verified agent-specific installation plan while preserving every canonical source file unchanged.
 
 ## Required adapter behavior
 
@@ -9,14 +9,14 @@ Every adapter must:
 1. Accept an explicit project or installation root.
 2. Resolve only paths inside that destination.
 3. Produce a complete preview before any write.
-4. Identify every source and target file.
+4. Identify every source, target, and deterministic transform.
 5. Detect conflicts, existing files, and symbolic links.
 6. Never overwrite, delete, or replace files without explicit `--apply`.
 7. Record a versioned, adapter-specific installation manifest.
-8. Verify checksums before update or uninstall.
+8. Verify source and installed checksums before mutation.
 9. Support rollback and safe uninstall using that manifest.
 10. Preserve unrelated project files and directories.
-11. Preserve QACraft source files unchanged.
+11. Preserve canonical QACraft source files unchanged.
 12. Avoid claiming that prompt instructions enforce runtime permissions.
 
 ## Verified adapter layouts
@@ -43,7 +43,26 @@ skills/<slug>/examples/expected-output.md
 shared/*.md
 ```
 
-The adapter maps those immutable sources into the selected agent layout. The installation manifest records both the original source path and the installed target path with a SHA-256 checksum.
+The adapter maps those canonical sources into the selected agent layout. Each manifest records the original source path, installed target path, optional transform, canonical source checksum, and installed checksum.
+
+### Agent Skills frontmatter normalization
+
+Canonical QACraft `SKILL.md` files keep project metadata such as `command`, `version`, and `status` as top-level fields because they are also repository specifications.
+
+For `codex` and `claude-code`, the installed copy is normalized to the Agent Skills frontmatter contract:
+
+```yaml
+---
+name: "feature-qa"
+description: "..."
+metadata:
+  qacraft-command: "/feature-qa"
+  qacraft-version: "1.0.0"
+  qacraft-status: "specification"
+---
+```
+
+The Markdown instruction body is preserved exactly. The generic adapter performs no transform and remains byte-for-byte equivalent to the canonical files.
 
 ## Lifecycle commands
 
@@ -80,5 +99,6 @@ Replace `codex` with `claude-code` or `generic` as required.
 
 - Codex skill discovery: `https://learn.chatgpt.com/docs/build-skills`
 - Claude Code skills: `https://code.claude.com/docs/en/slash-commands`
+- Agent Skills frontmatter: `https://agentskills.io/specification`
 
-These paths were verified before enabling writes. Automatic agent detection and user-global installation remain intentionally unsupported.
+These paths and the frontmatter contract were verified before enabling writes. Automatic agent detection and user-global installation remain intentionally unsupported.
