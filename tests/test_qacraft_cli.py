@@ -31,7 +31,7 @@ class QACraftCliTests(unittest.TestCase):
         self.assertIn("QACraft doctor passed.", result.stdout)
         self.assertIn("Write operations: disabled", result.stdout)
 
-    def test_plan_install_is_preview_only(self):
+    def test_plan_install_is_preview_only_and_complete(self):
         with tempfile.TemporaryDirectory() as destination:
             result = self.run_cli(
                 "plan-install",
@@ -48,6 +48,10 @@ class QACraftCliTests(unittest.TestCase):
             self.assertFalse(plan["writes_performed"])
             self.assertEqual(plan["agent"], "generic")
             self.assertEqual(plan["skills"], ["bug-report", "feature-qa"])
+            self.assertIn("release-policy.md", plan["shared_policies"])
+            self.assertIn("shared/release-policy.md", plan["source_files"])
+            self.assertIn("skills/feature-qa/SKILL.md", plan["source_files"])
+            self.assertIn("skills/bug-report/templates/report.yaml", plan["source_files"])
             self.assertEqual(list(Path(destination).iterdir()), [])
 
     def test_plan_install_rejects_unknown_skill(self):
@@ -59,6 +63,17 @@ class QACraftCliTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 2)
         self.assertIn("Unknown skill", result.stderr)
+
+    def test_plan_install_rejects_all_with_explicit_skills(self):
+        result = self.run_cli(
+            "plan-install",
+            "feature-qa",
+            "--all",
+            "--destination",
+            "/tmp/qacraft-preview",
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("either explicit skills or --all", result.stderr)
 
 
 if __name__ == "__main__":
