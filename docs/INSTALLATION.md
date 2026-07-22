@@ -15,12 +15,14 @@ The editable installation uses the reviewed checkout as its runtime and asset ro
 
 ## Build local artifacts
 
-Build both supported artifact types from a clean checkout:
+Use the standard build frontend from a clean checkout:
 
 ```bash
-python3 setup.py sdist --dist-dir dist
-python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .
+python3 -m pip install build
+python3 -m build --sdist --wheel --outdir dist
 ```
+
+The test suite creates a dedicated build environment and installs `build`, setuptools, and wheel once before running `python -m build --no-isolation`. Compatibility commands such as `python3 setup.py sdist --dist-dir dist` and `python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .` remain available when those build tools are already installed.
 
 The wheel build creates `qacraft/bundle/` only inside setuptools' temporary build directory. It copies an explicit allowlist of canonical runtime files and rejects symbolic links. The generated bundle is not committed to the repository.
 
@@ -43,8 +45,6 @@ qacraft doctor
 No package-index publication is currently claimed. Use artifacts built from a trusted commit.
 
 ## Legacy checkout interface
-
-The original source command remains supported:
 
 ```bash
 python3 scripts/qacraft.py list
