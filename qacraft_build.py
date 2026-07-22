@@ -8,7 +8,8 @@ from pathlib import Path
 from setuptools.command.build_py import build_py as _build_py
 
 ROOT = Path(__file__).resolve().parent
-BUNDLE_RELATIVE = Path("qacraft") / "bundle"
+BUNDLE_DISPLAY = "qacraft/bundle"
+BUNDLE_RELATIVE = Path(BUNDLE_DISPLAY)
 
 # One canonical source tree is kept in the repository. These reviewed paths are
 # copied only into setuptools' temporary build directory.
