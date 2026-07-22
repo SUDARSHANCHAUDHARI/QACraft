@@ -6,7 +6,8 @@ The installer is intentionally conservative:
 - writes require explicit ``--apply``;
 - existing destination files are never overwritten;
 - all installed files are recorded in a destination-local manifest;
-- source and destination containment are validated before copying.
+- source and destination containment are validated before copying;
+- symlinked destination paths are rejected.
 """
 
 from __future__ import annotations
@@ -53,10 +54,29 @@ def sha256_file(path: Path) -> str:
 def resolve_destination(destination: Path) -> Path:
     expanded = destination.expanduser()
     parent = expanded.parent.resolve(strict=True)
-    resolved = parent / expanded.name
-    if resolved == resolved.parent:
+    candidate = parent / expanded.name
+
+    if candidate == candidate.parent:
         raise InstallError("Destination cannot be a filesystem root.")
-    return resolved
+    if candidate.is_symlink():
+        raise InstallError("Destination cannot be a symbolic link.")
+    if candidate.exists() and not candidate.is_dir():
+        raise InstallError("Destination must be a directory or a new path.")
+
+    return candidate.resolve(strict=True) if candidate.exists() else candidate
+
+
+def reject_symlinked_target_path(destination: Path, relative: Path) -> None:
+    current = destination
+    if current.is_symlink():
+        raise InstallError(f"Destination path contains a symbolic link: {current}")
+
+    for part in relative.parts[:-1]:
+        current = current / part
+        if current.is_symlink():
+            raise InstallError(f"Destination path contains a symbolic link: {current}")
+        if current.exists() and not current.is_dir():
+            raise InstallError(f"Destination parent is not a directory: {current}")
 
 
 def build_install_plan(root: Path, destination: Path, source_files: list[str]) -> dict:
@@ -66,7 +86,7 @@ def build_install_plan(root: Path, destination: Path, source_files: list[str]) -
     conflicts: list[str] = []
 
     manifest_path = destination / MANIFEST_NAME
-    if manifest_path.exists():
+    if manifest_path.exists() or manifest_path.is_symlink():
         conflicts.append(manifest_path.as_posix())
 
     for source_name in source_files:
@@ -80,6 +100,7 @@ def build_install_plan(root: Path, destination: Path, source_files: list[str]) -
         except ValueError as exc:
             raise InstallError(f"Source escapes repository root: {source_name}") from exc
 
+        reject_symlinked_target_path(destination, relative)
         target = destination / relative
         try:
             target.relative_to(destination)
@@ -113,14 +134,16 @@ def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: 
         joined = "\n- ".join(plan["conflicts"])
         raise InstallError(f"Installation refused because destination files already exist:\n- {joined}")
 
-    destination = Path(plan["destination"])
+    destination = resolve_destination(Path(plan["destination"]))
     created_files: list[Path] = []
 
     try:
         destination.mkdir(parents=True, exist_ok=True)
         for item in plan["files"]:
             source = Path(item["source"])
-            target = Path(item["destination"])
+            relative = Path(item["relative_path"])
+            reject_symlinked_target_path(destination, relative)
+            target = destination / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             if target.exists() or target.is_symlink():
                 raise InstallError(f"Destination changed after preview: {target}")
@@ -147,6 +170,8 @@ def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: 
             ],
         }
         manifest_path = destination / MANIFEST_NAME
+        if manifest_path.exists() or manifest_path.is_symlink():
+            raise InstallError(f"Destination changed after preview: {manifest_path}")
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         created_files.append(manifest_path)
     except Exception:
@@ -163,10 +188,10 @@ def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: 
 
 
 def _remove_empty_directories(destination: Path) -> None:
-    if not destination.exists():
+    if not destination.exists() or destination.is_symlink():
         return
     directories = sorted(
-        (path for path in destination.rglob("*") if path.is_dir()),
+        (path for path in destination.rglob("*") if path.is_dir() and not path.is_symlink()),
         key=lambda path: len(path.parts),
         reverse=True,
     )
