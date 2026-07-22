@@ -31,7 +31,7 @@ class QACraftCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("QACraft doctor passed.", result.stdout)
         self.assertIn("Generic installer: available", result.stdout)
-        self.assertIn("Agent-specific installers: preview-only", result.stdout)
+        self.assertIn("Install verification and safe uninstall: available", result.stdout)
 
     def test_plan_install_is_preview_only_and_complete(self):
         with tempfile.TemporaryDirectory() as destination:
@@ -132,7 +132,7 @@ class QACraftCliTests(unittest.TestCase):
                 "--apply",
             )
             self.assertEqual(result.returncode, 2)
-            self.assertIn("preview-only", result.stderr)
+            self.assertIn("Only the generic adapter supports installation", result.stderr)
             self.assertFalse(destination.exists())
 
     def test_plan_install_rejects_unknown_skill(self):

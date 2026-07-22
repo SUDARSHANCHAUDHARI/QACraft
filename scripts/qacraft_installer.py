@@ -139,6 +139,8 @@ def apply_install_plan(plan: dict, *, qacraft_version: str, agent: str, skills: 
             ],
         }
         manifest_path = destination / MANIFEST_NAME
+        if manifest_path.exists() or manifest_path.is_symlink():
+            raise InstallError(f"Destination changed after preview: {manifest_path}")
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         created_files.append(manifest_path)
     except Exception:
