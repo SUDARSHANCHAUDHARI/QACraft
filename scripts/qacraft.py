@@ -9,6 +9,7 @@ import re
 import sys
 from pathlib import Path
 
+from qacraft_adapters import ADAPTERS, build_file_specs, layout_for
 from qacraft_installer import (
     InstallError,
     apply_install_plan,
@@ -32,7 +33,7 @@ REQUIRED_SHARED = (
     "publication-policy.md",
     "release-policy.md",
 )
-SUPPORTED_AGENTS = ("generic", "claude-code", "codex")
+SUPPORTED_AGENTS = tuple(ADAPTERS)
 
 
 def load_catalog() -> dict:
@@ -54,12 +55,14 @@ def skill_map() -> dict[str, dict]:
 def skill_source_files(slugs: list[str]) -> list[str]:
     files: list[str] = []
     for slug in sorted(set(slugs)):
-        files.extend([
-            f"skills/{slug}/SKILL.md",
-            f"skills/{slug}/templates/report.yaml",
-            f"skills/{slug}/examples/request.md",
-            f"skills/{slug}/examples/expected-output.md",
-        ])
+        files.extend(
+            [
+                f"skills/{slug}/SKILL.md",
+                f"skills/{slug}/templates/report.yaml",
+                f"skills/{slug}/examples/request.md",
+                f"skills/{slug}/examples/expected-output.md",
+            ]
+        )
     return files
 
 
@@ -79,8 +82,8 @@ def select_skills(args: argparse.Namespace) -> tuple[list[str] | None, int]:
     return sorted(set(selected)), 0
 
 
-def source_files_for(selected: list[str]) -> list[str]:
-    return skill_source_files(selected) + [f"shared/{name}" for name in REQUIRED_SHARED]
+def file_specs_for(agent: str, selected: list[str]) -> list[dict[str, str]]:
+    return build_file_specs(agent, selected, REQUIRED_SHARED)
 
 
 def command_list(_: argparse.Namespace) -> int:
@@ -96,6 +99,7 @@ def command_doctor(_: argparse.Namespace) -> int:
     except (OSError, KeyError, json.JSONDecodeError) as exc:
         errors.append(f"Catalog is unreadable: {exc}")
         skills = []
+
     for skill in skills:
         for source in skill_source_files([skill.get("slug", "")]):
             path = ROOT / source
@@ -105,32 +109,53 @@ def command_doctor(_: argparse.Namespace) -> int:
         path = ROOT / "shared" / name
         if not path.exists():
             errors.append(f"Missing shared policy: {path.relative_to(ROOT)}")
+
     if errors:
         print("QACraft doctor found problems:", file=sys.stderr)
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return 1
+
     print("QACraft doctor passed.")
     print(f"Repository: {ROOT}")
     print(f"Skills: {len(skills)}")
     print("Generic install, update, verification, and uninstall: available")
-    print("Agent-specific installers: preview-only")
+    print("Verified Codex and Claude Code adapters: available")
     return 0
+
+
+def build_adapter_install_plan(args: argparse.Namespace, selected: list[str]) -> dict:
+    layout = layout_for(args.agent)
+    specs = file_specs_for(args.agent, selected)
+    plan = build_install_plan(
+        ROOT,
+        Path(args.destination),
+        specs,
+        manifest_relative=layout.manifest_path,
+    )
+    plan.update(
+        {
+            "agent": args.agent,
+            "adapter_documentation": layout.documentation,
+            "skills": selected,
+            "shared_policies": list(REQUIRED_SHARED),
+            "source_files": [item["source"] for item in specs],
+            "target_files": [item["target"] for item in specs],
+            "file_mappings": specs,
+        }
+    )
+    return plan
 
 
 def command_plan_install(args: argparse.Namespace) -> int:
     selected, status = select_skills(args)
     if selected is None:
         return status
-    plan = {
-        "mode": "preview-only",
-        "agent": args.agent,
-        "destination": str(Path(args.destination).expanduser()),
-        "skills": selected,
-        "shared_policies": list(REQUIRED_SHARED),
-        "source_files": source_files_for(selected),
-        "writes_performed": False,
-    }
+    try:
+        plan = build_adapter_install_plan(args, selected)
+    except (InstallError, OSError, ValueError) as exc:
+        print(f"Installation planning failed: {exc}", file=sys.stderr)
+        return 1
     print(json.dumps(plan, indent=2))
     return 0
 
@@ -139,15 +164,16 @@ def command_install(args: argparse.Namespace) -> int:
     selected, status = select_skills(args)
     if selected is None:
         return status
-    if args.agent != "generic":
-        print("Only the generic adapter supports installation; agent-specific installers are preview-only.", file=sys.stderr)
-        return 2
     try:
-        plan = build_install_plan(ROOT, Path(args.destination), source_files_for(selected))
-        plan.update({"agent": args.agent, "skills": selected, "shared_policies": list(REQUIRED_SHARED)})
+        plan = build_adapter_install_plan(args, selected)
         if args.apply:
-            plan = apply_install_plan(plan, qacraft_version=load_version(), agent=args.agent, skills=selected)
-    except (InstallError, OSError, RuntimeError) as exc:
+            plan = apply_install_plan(
+                plan,
+                qacraft_version=load_version(),
+                agent=args.agent,
+                skills=selected,
+            )
+    except (InstallError, OSError, RuntimeError, ValueError) as exc:
         print(f"Installation failed: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(plan, indent=2))
@@ -159,17 +185,19 @@ def command_update(args: argparse.Namespace) -> int:
     if selected is None:
         return status
     try:
+        layout = layout_for(args.agent)
         plan = build_update_plan(
             ROOT,
             Path(args.destination),
-            source_files_for(selected),
+            file_specs_for(args.agent, selected),
             qacraft_version=load_version(),
-            agent="generic",
+            agent=args.agent,
             skills=selected,
+            manifest_relative=layout.manifest_path,
         )
         if args.apply:
             plan = apply_update_plan(plan)
-    except (InstallError, OSError, RuntimeError) as exc:
+    except (InstallError, OSError, RuntimeError, ValueError) as exc:
         print(f"Update failed: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(plan, indent=2))
@@ -178,8 +206,12 @@ def command_update(args: argparse.Namespace) -> int:
 
 def command_verify_install(args: argparse.Namespace) -> int:
     try:
-        result = verify_installation(Path(args.destination))
-    except (InstallError, OSError) as exc:
+        layout = layout_for(args.agent)
+        result = verify_installation(
+            Path(args.destination),
+            manifest_relative=layout.manifest_path,
+        )
+    except (InstallError, OSError, ValueError) as exc:
         print(f"Verification failed: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2))
@@ -188,25 +220,41 @@ def command_verify_install(args: argparse.Namespace) -> int:
 
 def command_uninstall(args: argparse.Namespace) -> int:
     try:
-        plan = build_uninstall_plan(Path(args.destination))
+        layout = layout_for(args.agent)
+        plan = build_uninstall_plan(
+            Path(args.destination),
+            manifest_relative=layout.manifest_path,
+        )
         if args.apply:
             plan = apply_uninstall_plan(plan)
-    except (InstallError, OSError) as exc:
+    except (InstallError, OSError, ValueError) as exc:
         print(f"Uninstall failed: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(plan, indent=2))
     return 0
 
 
+def add_agent_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--agent",
+        choices=SUPPORTED_AGENTS,
+        default="generic",
+        help="Installation adapter layout",
+    )
+
+
 def add_selection_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("skills", nargs="*", help="Skill slugs without a leading slash")
     parser.add_argument("--all", action="store_true", help="Select all skills")
-    parser.add_argument("--agent", choices=SUPPORTED_AGENTS, default="generic")
-    parser.add_argument("--destination", required=True, help="Explicit destination path")
+    add_agent_argument(parser)
+    parser.add_argument("--destination", required=True, help="Explicit project or install root")
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="qacraft", description="Inspect and install QACraft skills safely.")
+    parser = argparse.ArgumentParser(
+        prog="qacraft",
+        description="Inspect and install QACraft skills safely.",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     item = sub.add_parser("list", help="List available QA skills")
@@ -214,27 +262,30 @@ def build_parser() -> argparse.ArgumentParser:
     item = sub.add_parser("doctor", help="Validate local QACraft structure")
     item.set_defaults(func=command_doctor)
 
-    item = sub.add_parser("plan-install", help="Preview an installation plan")
+    item = sub.add_parser("plan-install", help="Preview an adapter installation plan")
     add_selection_arguments(item)
     item.set_defaults(func=command_plan_install)
 
-    item = sub.add_parser("install", help="Preview or apply a generic installation")
+    item = sub.add_parser("install", help="Preview or apply an adapter installation")
     add_selection_arguments(item)
     item.add_argument("--apply", action="store_true", help="Perform the reviewed installation")
     item.set_defaults(func=command_install)
 
-    item = sub.add_parser("update", help="Preview or apply a safe generic update")
+    item = sub.add_parser("update", help="Preview or apply a safe adapter update")
     item.add_argument("skills", nargs="*", help="Desired skill slugs after update")
     item.add_argument("--all", action="store_true", help="Select all skills")
-    item.add_argument("--destination", required=True, help="Existing generic installation")
+    add_agent_argument(item)
+    item.add_argument("--destination", required=True, help="Existing installation root")
     item.add_argument("--apply", action="store_true", help="Perform the reviewed update")
     item.set_defaults(func=command_update)
 
-    item = sub.add_parser("verify-install", help="Verify installed files against the manifest")
+    item = sub.add_parser("verify-install", help="Verify an adapter installation")
+    add_agent_argument(item)
     item.add_argument("--destination", required=True)
     item.set_defaults(func=command_verify_install)
 
     item = sub.add_parser("uninstall", help="Preview or apply safe manifest-based removal")
+    add_agent_argument(item)
     item.add_argument("--destination", required=True)
     item.add_argument("--apply", action="store_true", help="Remove only unchanged manifest-owned files")
     item.set_defaults(func=command_uninstall)
