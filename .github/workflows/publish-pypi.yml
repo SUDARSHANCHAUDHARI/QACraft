@@ -1,34 +1,30 @@
-name: Publish QACraft to PyPI
+name: Publish QACraft release
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to publish
+        description: Existing annotated release tag to publish
         required: true
-        default: v1.4.0
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/publish-pypi.yml"
+        default: v1.4.1
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   issues: write
 
 concurrency:
-  group: pypi-${{ github.event.release.tag_name || inputs.tag || 'v1.4.0' }}
+  group: release-${{ github.event.ref || inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   publish:
-    name: Publish verified artifacts
+    name: Publish verified release artifacts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/project/qacraft/
@@ -38,7 +34,8 @@ jobs:
         id: release
         shell: bash
         run: |
-          tag="${{ github.event.release.tag_name || inputs.tag || 'v1.4.0' }}"
+          tag="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          test -n "$tag"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Check out tagged source
@@ -57,39 +54,54 @@ jobs:
         run: |
           version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
           test "${{ steps.release.outputs.tag }}" = "v${version}"
+          git cat-file -t "${{ steps.release.outputs.tag }}" | grep -qx tag
           python3 scripts/generate_docs.py
           python3 scripts/validate_repo.py
           python3 scripts/qacraft.py release-check
           git diff --exit-code
 
-      - name: Build wheel and source distribution
+      - name: Build wheel and source distribution once
         run: |
           python3 -m pip install --disable-pip-version-check build
           python3 -m build --sdist --wheel --outdir dist
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
 
-      - name: Publish with PyPI Trusted Publishing
-        id: publish
-        continue-on-error: true
+          for path in sorted(Path("dist").iterdir()):
+              print(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}")
+          PY
+
+      - name: Create or update GitHub Release with exact artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --verify-tag \
+              --generate-notes \
+              --title "QACraft ${TAG#v}"
+          fi
+
+      - name: Publish the same artifacts to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
           print-hash: true
 
-      - name: Record PyPI publication result
-        if: always()
+      - name: Record publication result
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
-          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
-          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          TAG: ${{ steps.release.outputs.tag }}
         shell: bash
         run: |
-          if [ "$PUBLISH_OUTCOME" = "success" ]; then
-            status="published successfully to https://pypi.org/project/qacraft/"
-          else
-            status="not published. Configure a PyPI pending Trusted Publisher with owner SUDARSHANCHAUDHARI, repository QACraft, workflow publish-pypi.yml, environment pypi, then re-run this workflow"
-          fi
-          gh issue comment 16 --body "## PyPI publication — ${RELEASE_TAG}\n\nQACraft was ${status}.\n\nWorkflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment 22 --body "## ${TAG} published
 
-      - name: Fail when publication was not accepted
-        if: steps.publish.outcome != 'success'
-        run: exit 1
+          The validated wheel and source distribution were built once and the exact same files were published to GitHub Releases and PyPI.
+
+          Workflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
