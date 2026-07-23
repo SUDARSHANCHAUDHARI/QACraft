@@ -16,6 +16,7 @@ on:
 permissions:
   contents: write
   actions: write
+  issues: write
 
 concurrency:
   group: create-release-tag
@@ -71,3 +72,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
         run: gh workflow run publish-pypi.yml --ref main -f tag="$TAG"
+
+      - name: Record tag workflow result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          tag="${TAG:-unresolved}"
+          gh issue comment 22 --body "## Release tag workflow — ${tag}
+
+          Status: **${JOB_STATUS}**
+
+          Workflow run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
