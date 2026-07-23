@@ -23,5 +23,3 @@ markdown_extensions:
   - fenced_code
   - toc:
       permalink: true
-
-strict: true
