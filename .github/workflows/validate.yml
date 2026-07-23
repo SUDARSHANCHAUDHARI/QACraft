@@ -16,10 +16,11 @@ on:
       - "scripts/**"
       - "tests/**"
       - "MANIFEST.in"
+      - "mkdocs.yml"
       - "pyproject.toml"
       - "qacraft_build.py"
       - "setup.py"
-      - ".github/workflows/validate.yml"
+      - ".github/workflows/*.yml"
   workflow_dispatch:
 
 permissions:
