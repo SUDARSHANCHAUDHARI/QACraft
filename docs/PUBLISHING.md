@@ -14,7 +14,7 @@ Published site:
 
 QACraft uses OpenID Connect through `.github/workflows/publish-pypi.yml`. No long-lived PyPI API token is required.
 
-The PyPI publisher must use these exact values:
+The PyPI publisher uses these exact values:
 
 | Field | Value |
 |---|---|
@@ -24,14 +24,27 @@ The PyPI publisher must use these exact values:
 | Workflow | `publish-pypi.yml` |
 | Environment | `pypi` |
 
-For the first publication, create a pending Trusted Publisher in the PyPI account before re-running the workflow for `v1.4.0`. A pending publisher does not reserve the project name until publication succeeds.
+## Build-once publication
 
-The workflow validates the tag and repository, builds a wheel and source distribution, and publishes both artifacts. Future GitHub Releases trigger the workflow automatically.
+A release starts from an annotated version tag such as `v1.4.1`, or from a manual workflow run selecting an existing annotated tag.
+
+The publication workflow:
+
+1. checks out the tagged source;
+2. verifies that the tag matches the version in `pyproject.toml`;
+3. runs documentation generation, repository validation, and `release-check`;
+4. builds one wheel and one source distribution into `dist/`;
+5. creates or updates the GitHub Release with those files;
+6. publishes the exact same files from `dist/` to PyPI.
+
+Building once prevents the GitHub Release and PyPI copies from differing because of archive timestamps or other build-time metadata. Published SHA-256 values can therefore be compared directly.
 
 ## Release safety
 
-- Publish only an existing annotated release tag.
-- Keep the version in `pyproject.toml` identical to the tag without the `v` prefix.
-- Run repository generation, validation, and `release-check` before upload.
+- Publish only an annotated version tag that matches `pyproject.toml`.
+- Run repository generation, validation, tests, and `release-check` before tagging.
+- Build wheel and source distribution once per version.
+- Upload the same build directory to GitHub Releases and PyPI.
 - Use the protected `pypi` GitHub environment for the Trusted Publisher identity.
 - Never commit a PyPI token to the repository.
+- Never replace an already published PyPI version; use a patch release for corrections.
