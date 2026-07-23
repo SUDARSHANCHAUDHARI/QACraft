@@ -14,6 +14,7 @@ nav:
   - Compatibility: COMPATIBILITY.md
   - Evaluations: EVALUATIONS.md
   - Production readiness: PRODUCTION_READINESS.md
+  - Publishing: PUBLISHING.md
   - Release checklist: RELEASE_CHECKLIST.md
   - Phase 2 history: PHASE_2.md
 
