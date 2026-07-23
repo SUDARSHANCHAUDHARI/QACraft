@@ -73,17 +73,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Validate public QACraft 1.4.1 release
+      - name: Retry corrected public QACraft 1.4.1 checks
         env:
-          QACRAFT_PUBLIC_REPORT: ${{ runner.temp }}/QACRAFT_V1.4.1_PUBLIC_VALIDATION.md
-        run: python3 tests/public_release_validation.py
+          QACRAFT_PUBLIC_REPORT: ${{ runner.temp }}/QACRAFT_V1.4.1_PUBLIC_VALIDATION_RETRY.md
+        run: python3 tests/public_release_validation_retry.py
 
-      - name: Upload public release validation report
+      - name: Upload corrected public release report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qacraft-1.4.1-public-validation
-          path: ${{ runner.temp }}/QACRAFT_V1.4.1_PUBLIC_VALIDATION.md
+          name: qacraft-1.4.1-public-validation-retry
+          path: ${{ runner.temp }}/QACRAFT_V1.4.1_PUBLIC_VALIDATION_RETRY.md
           if-no-files-found: warn
           retention-days: 3
 
