@@ -1,0 +1,26 @@
+site_name: QACraft
+site_description: Reusable QA skills with safe agent adapters and deterministic behavior evaluations
+site_url: https://sudarshanchaudhari.github.io/QACraft/
+repo_url: https://github.com/SUDARSHANCHAUDHARI/QACraft
+repo_name: SUDARSHANCHAUDHARI/QACraft
+edit_uri: edit/main/docs/
+
+theme:
+  name: mkdocs
+
+nav:
+  - Home: index.md
+  - Installation: INSTALLATION.md
+  - Compatibility: COMPATIBILITY.md
+  - Evaluations: EVALUATIONS.md
+  - Production readiness: PRODUCTION_READINESS.md
+  - Release checklist: RELEASE_CHECKLIST.md
+  - Phase 2 history: PHASE_2.md
+
+markdown_extensions:
+  - tables
+  - fenced_code
+  - toc:
+      permalink: true
+
+strict: true
