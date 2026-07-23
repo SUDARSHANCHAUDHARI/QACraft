@@ -1,6 +1,13 @@
 # QACraft installation and lifecycle guide
 
-QACraft 1.4.0 has no third-party runtime dependencies and requires Python 3.10 or newer.
+QACraft 1.4.1 has no third-party runtime dependencies and requires Python 3.10 or newer.
+
+## Install from PyPI
+
+```bash
+python3 -m pip install qacraft==1.4.1
+qacraft doctor
+```
 
 ## Editable installation from a checkout
 
@@ -31,18 +38,16 @@ The source distribution contains the canonical source tree, tests, manifest, and
 Install a local wheel:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.4.0-py3-none-any.whl
+python3 -m pip install --no-deps dist/qacraft-1.4.1-py3-none-any.whl
 qacraft doctor
 ```
 
 Install a local source distribution:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.4.0.tar.gz
+python3 -m pip install --no-deps dist/qacraft-1.4.1.tar.gz
 qacraft doctor
 ```
-
-No package-index publication is currently claimed. Use artifacts built from a trusted commit.
 
 ## Legacy checkout interface
 
@@ -72,14 +77,22 @@ python3 scripts/demo.py
 
 These are project-level locations documented by their respective agent platforms. QACraft deliberately uses the native path for each adapter and does not install into user-global directories.
 
+## Destination safety boundary
+
+`--destination` is always the target project or install root and **must already exist as a directory**.
+
+QACraft does not create a missing destination root. This prevents a misspelled path from silently creating and populating an unintended directory. Create or select the project directory yourself, then pass that existing directory to QACraft.
+
+QACraft may create only its documented managed subdirectories and files inside the selected existing root. Filesystem roots, symbolic-link destinations, non-directory destinations, path traversal, unowned conflicts, and modified managed files remain blocked.
+
 ## Install a skill pack
 
-The destination is the target project root. Preview is the default:
+Preview is the default:
 
 ```bash
 qacraft install feature-qa bug-report \
   --agent github-copilot \
-  --destination /path/to/project
+  --destination /path/to/existing-project
 ```
 
 Apply only after reviewing the plan:
@@ -87,7 +100,7 @@ Apply only after reviewing the plan:
 ```bash
 qacraft install feature-qa bug-report \
   --agent github-copilot \
-  --destination /path/to/project \
+  --destination /path/to/existing-project \
   --apply
 ```
 
@@ -96,7 +109,7 @@ qacraft install feature-qa bug-report \
 ```bash
 qacraft install feature-qa \
   --agent generic \
-  --destination /path/to/install-root \
+  --destination /path/to/existing-install-root \
   --apply
 ```
 
@@ -105,7 +118,7 @@ qacraft install feature-qa \
 ```bash
 qacraft verify-install \
   --agent github-copilot \
-  --destination /path/to/project
+  --destination /path/to/existing-project
 ```
 
 A healthy installation returns exit code `0`. Missing or modified managed files return exit code `1`.
@@ -115,11 +128,11 @@ A healthy installation returns exit code `0`. Missing or modified managed files 
 ```bash
 qacraft update feature-qa bug-report release-qa \
   --agent github-copilot \
-  --destination /path/to/project
+  --destination /path/to/existing-project
 
 qacraft update feature-qa bug-report release-qa \
   --agent github-copilot \
-  --destination /path/to/project \
+  --destination /path/to/existing-project \
   --apply
 ```
 
@@ -130,11 +143,11 @@ QACraft refuses to update modified managed files or overwrite unrelated files. F
 ```bash
 qacraft uninstall \
   --agent github-copilot \
-  --destination /path/to/project
+  --destination /path/to/existing-project
 
 qacraft uninstall \
   --agent github-copilot \
-  --destination /path/to/project \
+  --destination /path/to/existing-project \
   --apply
 ```
 
@@ -165,7 +178,8 @@ The test suite:
 4. runs `doctor`, `eval-list`, `evaluate`, and `release-check`;
 5. performs an agent install, verification, and uninstall lifecycle;
 6. verifies all declared evaluation fixtures through the installed release check;
-7. confirms unrelated project content remains intact.
+7. confirms unrelated project content remains intact;
+8. confirms preview and apply reject nonexistent destination roots without creating them.
 
 ## Operational boundaries
 

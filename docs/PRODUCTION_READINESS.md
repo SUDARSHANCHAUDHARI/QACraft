@@ -1,14 +1,15 @@
 # QACraft production readiness
 
-QACraft 1.4.0 is production-ready as a **source-controlled skill distribution, locally buildable package, verified multi-agent adapter set, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, evidence-authenticity service, or published package-index release.
+QACraft 1.4.1 is production-ready as a **source-controlled skill distribution, publicly installable package, verified multi-agent adapter set, and deterministic evaluation toolkit**. It is not a production permission system, autonomous QA executor, or evidence-authenticity service.
 
 ## Supported production use
 
 - maintain 25 versioned QA workflow specifications;
-- run QACraft from a checkout, editable installation, local wheel, or local source distribution;
+- install QACraft from PyPI, a checkout, an editable installation, a wheel, or a source distribution;
 - build a self-contained wheel from an explicit canonical-source allowlist;
 - inspect and install wheel and source-distribution artifacts in isolated environments;
 - install selected skills into explicit Codex, Claude Code, GitHub Copilot, Gemini CLI, OpenCode, or generic project layouts;
+- require the selected project root to exist before any lifecycle plan or write;
 - run multiple adapters in one project using independent manifests;
 - preview and safely apply installation changes;
 - verify installed files against checksummed manifests;
@@ -69,11 +70,12 @@ The unit suite builds and validates both distribution artifacts. The pull-reques
 - wheel and source-distribution archives are inspected before acceptance;
 - each artifact is installed and lifecycle-tested in an isolated environment;
 - published fixture expectations are checked by the installed release command;
-- no package-index upload occurs automatically.
+- a versioned publication builds artifacts once and sends the same files to GitHub Releases and PyPI.
 
 ## Filesystem lifecycle safety
 
-- every destination is explicit;
+- every destination is explicit and must already exist as a directory;
+- nonexistent destinations fail before planning or writing and remain absent;
 - preview is the default;
 - writes require `--apply`;
 - existing unowned files are conflicts;
@@ -109,10 +111,9 @@ QACraft does not:
 - authenticate approvers or evidence producers;
 - prove that screenshots, logs, traces, hashes, or source references are genuine;
 - execute product tests or connect to customer environments;
-- modify tickets, repositories, deployment systems, agent configuration files, or publication targets;
+- modify tickets, repositories, deployment systems, or agent configuration files during normal local operation;
 - automatically detect agents or install into user-global directories;
-- silently overwrite or force-delete files;
-- publish packages or documentation automatically.
+- silently overwrite, force-delete, or create a missing destination root.
 
 Adopters must provide the runtime sandbox, identity, authorisation, evidence storage, external-system integrations, and audit controls described by the shared policies.
 
@@ -121,8 +122,7 @@ Adopters must provide the runtime sandbox, identity, authorisation, evidence sto
 - Python 3.10 or newer is required.
 - Python 3.12 is continuously validated on Ubuntu.
 - macOS and Windows use cross-platform `pathlib` operations but are not both continuously tested in GitHub Actions.
-- editable, local wheel, and local source-distribution installation are supported.
-- no PyPI/package-index publication is claimed.
+- PyPI, editable, wheel, and source-distribution installation are supported.
 - five product-native project adapters are explicitly mapped; user-global paths remain unsupported.
 - ten skills have deterministic behavior rubrics; all 25 skills remain installable.
 
@@ -132,12 +132,12 @@ See `docs/COMPATIBILITY.md` for the complete matrix.
 
 The repository intentionally uses:
 
-- one automatic job per pull request;
-- Python 3.12 only;
-- no automatic post-merge run;
+- one automatic Python 3.12 validation job per pull request;
 - no scheduled workflow;
-- no automatic package or Pages deployment;
-- concurrency cancellation for superseded PR runs.
+- a Pages workflow only for documentation changes on `main` or manual runs;
+- a release workflow only for version tags or explicit manual publication;
+- no duplicate artifact builds within one release;
+- concurrency controls to avoid overlapping deployments.
 
 ## Release decision
 

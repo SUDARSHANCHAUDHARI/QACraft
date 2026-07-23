@@ -2,7 +2,7 @@
 
 Reusable AI skills, safe installation lifecycle, and deterministic behavior evaluations for everyday software QA work.
 
-QACraft 1.4.0 includes:
+QACraft 1.4.1 includes:
 
 - 25 detailed QA workflow skills
 - shared QA, evidence, security, approval, data, result, publication, and release policies
@@ -16,6 +16,14 @@ QACraft 1.4.0 includes:
 - generated HTML documentation, schemas, examples, templates, tests, and release guidance
 
 No third-party runtime Python packages are required. Python 3.10 or newer is supported.
+
+## Install from PyPI
+
+```bash
+python3 -m pip install qacraft==1.4.1
+qacraft doctor
+qacraft list
+```
 
 ## Start from a checkout
 
@@ -51,7 +59,7 @@ python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .
 Install the built wheel locally:
 
 ```bash
-python3 -m pip install --no-deps dist/qacraft-1.4.0-py3-none-any.whl
+python3 -m pip install --no-deps dist/qacraft-1.4.1-py3-none-any.whl
 qacraft doctor
 ```
 
@@ -59,11 +67,11 @@ The wheel contains a generated `qacraft/bundle/` assembled from an explicit allo
 
 The source distribution contains the canonical source tree and build recipe. Both artifact types are inspected, installed into isolated environments, and exercised through release checks, evaluation, and agent lifecycle tests.
 
-No PyPI or other package-index publication is claimed or performed.
-
 ## Install into a verified agent
 
 Each adapter uses an officially documented project skill location and a separate QACraft manifest.
+
+**The `--destination` must already exist and must be the intended project root.** QACraft refuses a missing path instead of creating and populating a possibly mistyped destination. It may create only documented QACraft-owned subdirectories inside that existing root.
 
 | Agent | `--agent` value | Skill location | Manifest |
 |---|---|---|---|
@@ -78,7 +86,7 @@ Preview:
 ```bash
 qacraft install feature-qa bug-report \
   --agent github-copilot \
-  --destination /path/to/project
+  --destination /path/to/existing-project
 ```
 
 Apply:
@@ -86,7 +94,7 @@ Apply:
 ```bash
 qacraft install feature-qa bug-report \
   --agent github-copilot \
-  --destination /path/to/project \
+  --destination /path/to/existing-project \
   --apply
 ```
 
@@ -97,16 +105,16 @@ Replace `github-copilot` with any verified `--agent` value from the table. QACra
 ```bash
 qacraft verify-install \
   --agent github-copilot \
-  --destination /path/to/project
+  --destination /path/to/existing-project
 
 qacraft update feature-qa bug-report release-qa \
   --agent github-copilot \
-  --destination /path/to/project \
+  --destination /path/to/existing-project \
   --apply
 
 qacraft uninstall \
   --agent github-copilot \
-  --destination /path/to/project \
+  --destination /path/to/existing-project \
   --apply
 ```
 
@@ -147,14 +155,16 @@ qacraft release-check
 python3 scripts/demo.py
 ```
 
-Generated documentation must be committed. The pull-request workflow runs one Python 3.12 validation job and does not run again after merge.
+Generated documentation must be committed. The pull-request workflow runs one Python 3.12 validation job.
 
 ## Documentation
 
+- [Published documentation](https://sudarshanchaudhari.github.io/QACraft/)
 - [Installation and lifecycle](docs/INSTALLATION.md)
 - [Compatibility matrix](docs/COMPATIBILITY.md)
 - [Behavior evaluations](docs/EVALUATIONS.md)
 - [Production readiness](docs/PRODUCTION_READINESS.md)
+- [Publishing](docs/PUBLISHING.md)
 - [Phase 2 architecture](docs/PHASE_2.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Changelog](CHANGELOG.md)
@@ -166,7 +176,7 @@ Serve the HTML documentation locally:
 python3 scripts/serve.py
 ```
 
-The generated site already lives under `/docs`. GitHub Pages may be enabled manually using branch-based publishing when the repository plan and visibility support it. No additional automatic Pages workflow is required.
+The published site is deployed by `.github/workflows/pages.yml`.
 
 ## Skill catalog
 

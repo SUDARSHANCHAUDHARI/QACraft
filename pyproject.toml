@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qacraft"
-version = "1.4.0"
+version = "1.4.1"
 description = "Reusable QA skills with safe agent adapters and deterministic behavior evaluations"
 readme = "README.md"
 license = { text = "MIT" }
@@ -42,7 +42,7 @@ qacraft = "qacraft:main"
 Homepage = "https://github.com/SUDARSHANCHAUDHARI/QACraft"
 Repository = "https://github.com/SUDARSHANCHAUDHARI/QACraft"
 Issues = "https://github.com/SUDARSHANCHAUDHARI/QACraft/issues"
-Documentation = "https://github.com/SUDARSHANCHAUDHARI/QACraft/tree/main/docs"
+Documentation = "https://sudarshanchaudhari.github.io/QACraft/"
 
 [tool.setuptools]
 packages = ["qacraft"]

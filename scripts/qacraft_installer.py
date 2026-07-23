@@ -90,16 +90,23 @@ def normalise_file_specs(
 
 
 def resolve_destination(destination: Path) -> Path:
+    """Resolve an explicitly selected existing project root."""
+
     expanded = destination.expanduser()
-    parent = expanded.parent.resolve(strict=True)
-    candidate = parent / expanded.name
+    if expanded.is_symlink():
+        raise InstallError("Destination cannot be a symbolic link.")
+    try:
+        candidate = expanded.resolve(strict=True)
+    except FileNotFoundError as exc:
+        raise InstallError(
+            f"Destination directory does not exist: {expanded}. "
+            "Create or select the project directory explicitly before running QACraft."
+        ) from exc
     if candidate == candidate.parent:
         raise InstallError("Destination cannot be a filesystem root.")
-    if candidate.is_symlink():
-        raise InstallError("Destination cannot be a symbolic link.")
-    if candidate.exists() and not candidate.is_dir():
-        raise InstallError("Destination must be a directory or a new path.")
-    return candidate.resolve(strict=True) if candidate.exists() else candidate
+    if not candidate.is_dir():
+        raise InstallError("Destination must be an existing directory.")
+    return candidate
 
 
 def reject_symlinked_target_path(destination: Path, relative: Path) -> None:
@@ -227,7 +234,6 @@ def apply_install_plan(
     created_files: list[Path] = []
 
     try:
-        destination.mkdir(parents=True, exist_ok=True)
         for item in plan["files"]:
             source = Path(item["source"])
             if sha256_file(source) != item.get("source_sha256"):

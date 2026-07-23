@@ -23,7 +23,16 @@
 - [ ] Each installed artifact passes doctor, evaluation, release-check, and lifecycle smoke tests.
 - [ ] The installed release check validates the evaluation fixture catalog.
 - [ ] Incomplete installed assets fail explicitly.
-- [ ] No package-index publication is claimed unless an upload is separately reviewed and performed.
+- [ ] Public installation with `pip install qacraft==<version>` succeeds after publication.
+
+## Destination safety
+
+- [ ] Install preview rejects a nonexistent destination and does not create it.
+- [ ] Install apply rejects a nonexistent destination and does not create it.
+- [ ] Existing directories remain valid installation roots.
+- [ ] QACraft creates only documented managed subdirectories within the existing root.
+- [ ] Filesystem roots, symbolic links, non-directories, traversal, and unowned conflicts are rejected.
+- [ ] The same existing-directory boundary applies to update, verify, and uninstall.
 
 ## Verified adapters
 
@@ -60,22 +69,26 @@
 ## Documentation and release
 
 - [ ] README commands match the CLI and artifact build recipe.
-- [ ] Installation, compatibility, evaluation, and production-readiness documentation is current.
+- [ ] Installation, compatibility, evaluation, production-readiness, publishing, and Pages documentation is current.
 - [ ] Changelog contains the release version and date.
 - [ ] `pyproject.toml` version matches the changelog.
-- [ ] Project metadata includes README, MIT license, author, classifiers, repository URLs, build backend, entry point, bundle builder, and source manifest.
+- [ ] Project metadata includes README, MIT license, author, classifiers, repository URLs, documentation URL, build backend, entry point, bundle builder, and source manifest.
 - [ ] Security boundaries and unsupported capabilities are visible.
 - [ ] Completed roadmaps are marked complete and new work is tracked separately.
-- [ ] CI remains PR/manual only with exactly one Python 3.12 job.
+- [ ] Core CI remains PR/manual only with exactly one Python 3.12 validation job.
 
 ## Publication
 
 - [ ] Merge using a reviewed, green pull request.
-- [ ] Create a signed or annotated tag matching the release version when ready to publish.
-- [ ] Create GitHub release notes from `CHANGELOG.md`.
-- [ ] Publish to a package index only through a separately approved release process.
-- [ ] Enable `/docs` branch-based GitHub Pages only when desired and supported.
-- [ ] Do not add recurring or duplicate Actions workflows solely for publication.
+- [ ] Create an annotated tag matching the release version.
+- [ ] The tag points to the intended validated merge commit.
+- [ ] The publication workflow validates the tagged source again.
+- [ ] Build the wheel and source distribution exactly once.
+- [ ] Attach those exact artifacts to the GitHub Release.
+- [ ] Publish the same artifact files to PyPI through Trusted Publishing.
+- [ ] Compare recorded SHA-256 digests for the GitHub and PyPI copies.
+- [ ] Confirm GitHub Pages remains live.
+- [ ] Do not replace an existing PyPI version; issue a patch version for corrections.
 
 ## Runtime deployment responsibility
 

@@ -19,6 +19,7 @@ class QACraftUninstallTests(unittest.TestCase):
         )
 
     def install_feature_qa(self, destination: Path) -> None:
+        destination.mkdir()
         result = self.run_cli(
             "install",
             "feature-qa",

@@ -2,6 +2,20 @@
 
 All notable QACraft changes are documented here.
 
+## 1.4.1 — 2026-07-23
+
+### Fixed
+
+- Installation planning and application now require `--destination` to reference an existing directory.
+- Mistyped or nonexistent project roots fail with a controlled error and are never created or populated.
+- Release publication builds artifacts once and uses the same wheel and source archive for GitHub Releases and PyPI.
+
+### Safety
+
+- QACraft creates only documented managed subdirectories inside an explicitly selected existing project root.
+- Preview, apply, update, verification, and uninstall share the same existing-directory boundary.
+- Regression coverage verifies that preview and apply leave nonexistent destinations untouched.
+
 ## 1.4.0 — 2026-07-22
 
 ### Added
