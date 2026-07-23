@@ -1,0 +1,73 @@
+name: Create QACraft release tag
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/create-release-tag.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version matching pyproject.toml, without the v prefix
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: create-release-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Create annotated tag and start publication
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out validated main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolve and validate version
+        id: release
+        shell: bash
+        run: |
+          project_version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          requested="${{ inputs.version }}"
+          version="${requested:-$project_version}"
+          test "$version" = "$project_version"
+          grep -q "^## ${version} — " CHANGELOG.md
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create annotated tag when absent
+        id: tag
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            tagged_commit="$(git rev-list -n 1 "$TAG")"
+            test "$tagged_commit" = "$GITHUB_SHA"
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            git tag -a "$TAG" -m "QACraft ${TAG#v}"
+            git push origin "refs/tags/$TAG"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Start build-once publication
+        if: steps.tag.outputs.created == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh workflow run publish-pypi.yml --ref main -f tag="$TAG"
