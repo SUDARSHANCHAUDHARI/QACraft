@@ -79,24 +79,37 @@ class QACraftCliTests(unittest.TestCase):
             )
             self.assertEqual(list(Path(destination).iterdir()), [])
 
-    def test_generic_install_without_apply_is_preview_only(self):
+    def test_generic_install_preview_rejects_nonexistent_destination(self):
         with tempfile.TemporaryDirectory() as parent:
-            destination = Path(parent) / "skills"
+            destination = Path(parent) / "missing-project"
             result = self.run_cli(
                 "install",
                 "feature-qa",
                 "--destination",
                 str(destination),
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            plan = json.loads(result.stdout)
-            self.assertEqual(plan["mode"], "preview-only")
-            self.assertFalse(plan["writes_performed"])
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("does not exist", result.stderr)
+            self.assertFalse(destination.exists())
+
+    def test_generic_install_apply_rejects_nonexistent_destination(self):
+        with tempfile.TemporaryDirectory() as parent:
+            destination = Path(parent) / "missing-project"
+            result = self.run_cli(
+                "install",
+                "feature-qa",
+                "--destination",
+                str(destination),
+                "--apply",
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("does not exist", result.stderr)
             self.assertFalse(destination.exists())
 
     def test_generic_install_apply_creates_files_and_manifest(self):
         with tempfile.TemporaryDirectory() as parent:
             destination = Path(parent) / "skills"
+            destination.mkdir()
             result = self.run_cli(
                 "install",
                 "feature-qa",
