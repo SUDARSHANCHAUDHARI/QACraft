@@ -111,4 +111,6 @@ jobs:
             PAGES_LINE="- GitHub Pages: setup was not accepted by the repository plan/settings"
           fi
 
-          gh issue comment 16 --body "## QACraft 1.4.0 publication\n\n- Annotated tag: \`v1.4.0\`\n- GitHub Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/v1.4.0\n- Release artifacts: wheel and source distribution attached\n${PAGES_LINE}\n- PyPI: not published because this repository has no connected PyPI account, API token, or Trusted Publisher authorization\n\nPublication workflow commit: \`${GITHUB_SHA}\`"
+          gh issue comment 16 --body "## QACraft 1.4.0 publication retry after repository became public\n\n- Annotated tag: \`v1.4.0\`\n- GitHub Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/v1.4.0\n- Release artifacts: wheel and source distribution attached\n${PAGES_LINE}\n- PyPI: Trusted Publishing workflow will be added to main; PyPI-side publisher authorization is still required\n\nPublication workflow commit: \`${GITHUB_SHA}\`"
+
+# Retried after repository visibility changed to public.
