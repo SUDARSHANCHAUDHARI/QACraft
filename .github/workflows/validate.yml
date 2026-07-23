@@ -34,7 +34,7 @@ jobs:
   validate:
     name: Validate on Python 3.12
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -72,6 +72,20 @@ jobs:
           path: ${{ runner.temp }}/qacraft-test-failure.log
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Validate public QACraft 1.4.1 release
+        env:
+          QACRAFT_PUBLIC_REPORT: ${{ runner.temp }}/QACRAFT_V1.4.1_PUBLIC_VALIDATION.md
+        run: python3 tests/public_release_validation.py
+
+      - name: Upload public release validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qacraft-1.4.1-public-validation
+          path: ${{ runner.temp }}/QACRAFT_V1.4.1_PUBLIC_VALIDATION.md
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Check generated files are committed
         run: git diff --exit-code
