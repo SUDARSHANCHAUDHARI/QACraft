@@ -10,6 +10,19 @@ from qacraft_installer import InstallError, build_install_plan  # noqa: E402
 
 
 class QACraftInstallerSafetyTests(unittest.TestCase):
+    def test_rejects_nonexistent_destination(self):
+        with tempfile.TemporaryDirectory() as parent:
+            destination = Path(parent) / "missing-project"
+
+            with self.assertRaisesRegex(InstallError, "does not exist"):
+                build_install_plan(
+                    ROOT,
+                    destination,
+                    ["skills/feature-qa/SKILL.md"],
+                )
+
+            self.assertFalse(destination.exists())
+
     def test_rejects_symlink_destination(self):
         with tempfile.TemporaryDirectory() as parent:
             parent_path = Path(parent)
@@ -39,6 +52,7 @@ class QACraftInstallerSafetyTests(unittest.TestCase):
     def test_rejects_source_parent_traversal(self):
         with tempfile.TemporaryDirectory() as parent:
             destination = Path(parent) / "destination"
+            destination.mkdir()
             with self.assertRaisesRegex(InstallError, "Unsafe source path"):
                 build_install_plan(ROOT, destination, ["../outside.txt"])
 
