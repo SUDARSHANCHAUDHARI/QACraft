@@ -33,7 +33,7 @@ jobs:
           python-version: "3.12"
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Install MkDocs
         run: python3 -m pip install --disable-pip-version-check "mkdocs==1.6.1"
